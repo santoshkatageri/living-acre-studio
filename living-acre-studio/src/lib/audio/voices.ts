@@ -11,7 +11,8 @@
 /* ------------------------------------------------------------------ */
 
 export const GEMINI_TTS_MODELS = {
-  flash: "gemini-2.5-flash-preview-tts",
+  flash: "gemini-3.8-flash-tts",
+  lite: "gemini-3.8-flash-lite-tts",
   pro: "gemini-2.5-pro-preview-tts",
 } as const;
 

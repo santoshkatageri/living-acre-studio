@@ -22,7 +22,7 @@ import { listSegments, renderEpisodeNarration } from "@/lib/audio/tts";
 import { PUBLIC_DIR } from "./constants";
 import { sceneOffsets } from "./script";
 import { ASSET_BIBLE } from "./assets";
-import { confirmPublished, createScheduledPost, getBufferMode } from "./buffer";
+import { confirmPublished, createScheduledPost, getBufferMode, resolveChannelIdAsync } from "./buffer";
 import { probeMedia } from "./ffmpeg";
 import { DEFAULT_SLOTS, episodeDir, maskId } from "./constants";
 import { buildMetadata } from "./metadata";
@@ -722,17 +722,31 @@ async function execBufferSchedule(episodeId: string) {
       results.push(`${pub.channel}: already ${pub.status} (idempotent skip)`);
       continue;
     }
+    const ch = pub.channel as "instagram" | "youtube";
+    const realChannelId = await resolveChannelIdAsync(ch);
     const meta = (pub.metadata ?? {}) as { title?: string; description?: string };
     const text =
-      pub.channel === "instagram"
+      ch === "instagram"
         ? `${pub.caption}\n\n${pub.hashtags.join(" ")}`
         : `${meta.title ?? pub.caption}\n\n${meta.description ?? ""}`.trim();
+
+    // Buffer needs a full HTTPS URL to fetch the video file.
+    // The media path is relative (e.g. /outputs/...); resolve it against
+    // the public base URL from MEDIA_BASE_URL env or the app's own origin.
+    const relPath = pub.mediaUrl ?? "";
+    const baseUrl = process.env.MEDIA_BASE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
+    const fullMediaUrl = baseUrl && relPath.startsWith("/")
+      ? `${baseUrl.replace(/\/$/, "")}${relPath}`
+      : relPath;
+
     try {
       const res = await createScheduledPost({
-        channelId: `${pub.channel}-channel`, // env ids resolved by the live client config
+        channelId: realChannelId,
+        channel: ch,
         text,
-        mediaUrl: pub.mediaUrl ?? "",
+        mediaUrl: fullMediaUrl,
         title: meta.title,
+        description: meta.description,
         dueAt: pub.scheduledAt ?? nextSlotIst("07:00"),
         idempotencyKey: pub.idempotencyKey,
       });
@@ -742,9 +756,9 @@ async function execBufferSchedule(episodeId: string) {
           status: "scheduled",
           mode,
           bufferPostId: res.postId,
-          channelId: mode === "mock" ? `mock-${pub.channel}-channel` : res.mode ? maskId(`${pub.channel}-env`) : pub.channelId,
+          channelId: realChannelId,
           attempts: pub.attempts + 1,
-          response: { dueAt: res.dueAt, requestMode: mode },
+          response: { dueAt: res.dueAt, requestMode: mode, postRaw: res.raw },
         })
         .where(eq(publications.id, pub.id));
       await recordUsage(episodeId, pub.channel, 1, `buffer createPost (${mode})`, 0);

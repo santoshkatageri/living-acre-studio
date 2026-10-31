@@ -115,6 +115,9 @@ export async function renderEpisodeNarration(params: {
     }
 
     const instruction = buildTtsInstruction(profile, spoken, audio.narration.pace);
+    // No delay needed for local mock
+    if (i > 0 && audio.narration.provider !== 'local_mock') await new Promise(r => setTimeout(r, 5000));
+
     const res = await provider.synthesize({
       text: spoken,
       voice: profile,

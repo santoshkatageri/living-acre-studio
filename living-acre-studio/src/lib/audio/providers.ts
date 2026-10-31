@@ -40,14 +40,16 @@ export interface TtsProvider {
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, attempts = 5): Promise<T> {
   let last: unknown;
   for (let i = 0; i < attempts; i++) {
     try {
       return await fn();
     } catch (e) {
       last = e;
-      await new Promise((r) => setTimeout(r, 500 * 2 ** i));
+      // Exponential backoff with jitter
+      const delay = (1000 * 2 ** i) + (Math.random() * 1000);
+      await new Promise((r) => setTimeout(r, delay));
     }
   }
   throw last;
