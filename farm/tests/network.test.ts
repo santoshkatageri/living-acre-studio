@@ -138,9 +138,11 @@ describe("the required links are single edges", () => {
     { label: "gate - beds", a: "gate", b: "beds_sw" },
     { label: "beds - goshala door gap", a: "beds_to_goshala", b: "goshala_door" },
     { label: "beds - farmhouse front door", a: "beds_to_farmhouse", b: "farmhouse_door" },
-    { label: "beds - orchard (direct)", a: "beds_to_orchard", b: "orchard_sw" },
+    // The wedge is one trunk out of the beds corner that forks once.
+    { label: "beds - orchard fork (the shared trunk)", a: "beds_to_orchard", b: "orchard_fork" },
+    { label: "orchard fork - orchard (direct)", a: "orchard_fork", b: "orchard_sw" },
     { label: "orchard - ring", a: "orchard_sw", b: NETWORK.ring?.entranceId ?? "ring_0" },
-    { label: "beds - pond ring", a: "beds_to_orchard", b: NETWORK.ring?.entranceId ?? "ring_0" },
+    { label: "orchard fork - pond ring", a: "orchard_fork", b: NETWORK.ring?.entranceId ?? "ring_0" },
   ];
 
   for (const link of required) {
@@ -179,7 +181,7 @@ describe("the required links are single edges", () => {
   });
 
   test("alternative routes: the orchard is still reachable with the direct link cut", () => {
-    const direct = edgeBetween("beds_to_orchard", "orchard_sw") as PathEdge;
+    const direct = edgeBetween("orchard_fork", "orchard_sw") as PathEdge;
     const without = reachableFrom(NETWORK, "gate", (edge) => edge.id === direct.id);
     expect(without.has("orchard_sw"), "the orchard needs the ring link too").toBe(true);
 
@@ -349,9 +351,11 @@ describe("the flood fill from the gate reaches every section", () => {
 });
 
 describe("edges can be walked end to end", () => {
-  // The four dead-end branches are the only bridges: cut one and a section
-  // is lost. Everything inside the three cycles has a way round.
-  test("exactly the four dead-end branches are bridges", () => {
+  // Bridges: the four dead-end doorway branches, plus the one shared trunk the
+  // beds corner sends to the orchard fork. Cutting anything inside the three
+  // cycles still leaves a way round; cutting that trunk, or a doorway branch,
+  // strands a section.
+  test("exactly the four doorway branches and the orchard trunk are bridges", () => {
     const bridges: string[] = [];
     for (const edge of NETWORK.edges) {
       const reachable = reachableFrom(NETWORK, "gate", (candidate) => candidate.id === edge.id);
@@ -361,10 +365,19 @@ describe("edges can be walked end to end", () => {
       [
         "beds_to_farmhouse--farmhouse_door",
         "beds_to_goshala--goshala_door",
+        "beds_to_orchard--orchard_fork",
         "gate--beds_sw",
         "gate--compost",
       ].sort(),
     );
+  });
+
+  test("the orchard trunk is the only way out to the orchard and the ring", () => {
+    const trunk = edgeBetween("beds_to_orchard", "orchard_fork") as PathEdge;
+    const without = reachableFrom(NETWORK, "gate", (edge) => edge.id === trunk.id);
+    expect(without.has("orchard_fork")).toBe(false);
+    expect(without.has("orchard_sw"), "merged wedge: one trunk feeds both").toBe(false);
+    expect(without.has(NETWORK.ring?.entranceId ?? "ring_0")).toBe(false);
   });
 
   test("cutting a bridge really isolates a section (this is the failure the brief asks for)", () => {
@@ -390,5 +403,53 @@ describe("edges can be walked end to end", () => {
       }
     }
     expect(failures).toEqual([]);
+  });
+});
+
+describe("the wedge is one trunk that forks once", () => {
+  const apex = nodePoint("beds_to_orchard");
+  const fork = nodePoint("orchard_fork");
+  const orchard = nodePoint("orchard_sw");
+  const ring = nodePoint(NETWORK.ring?.entranceId ?? "ring_0");
+
+  const triangleArea = (a: Vec2, b: Vec2, c: Vec2): number =>
+    Math.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2;
+
+  test("the beds corner sends one leg out, and the split happens at the fork", () => {
+    const fromApex = NETWORK.edges.filter((edge) => edge.from === "beds_to_orchard" || edge.to === "beds_to_orchard");
+    const towardTheWedge = fromApex.filter((edge) => {
+      const other = edge.from === "beds_to_orchard" ? edge.to : edge.from;
+      return other === "orchard_fork" || other === "orchard_sw" || other === (NETWORK.ring?.entranceId ?? "ring_0");
+    });
+    expect(towardTheWedge.map((edge) => edge.id)).toEqual(["beds_to_orchard--orchard_fork"]);
+    expect(edgeBetween("orchard_fork", "orchard_sw")).toBeDefined();
+    expect(edgeBetween("orchard_fork", NETWORK.ring?.entranceId ?? "ring_0")).toBeDefined();
+    expect(edgeBetween("orchard_sw", NETWORK.ring?.entranceId ?? "ring_0")).toBeDefined();
+  });
+
+  test("the fork is the foot of the orchard's perpendicular, so nothing doubles back", () => {
+    const norm = (v: Vec2): Vec2 => {
+      const length = Math.hypot(v.x, v.y);
+      return { x: v.x / length, y: v.y / length };
+    };
+    const trunk = norm({ x: fork.x - apex.x, y: fork.y - apex.y });
+    const toOrchard = norm({ x: orchard.x - fork.x, y: orchard.y - fork.y });
+    const toRing = norm({ x: ring.x - fork.x, y: ring.y - fork.y });
+    const cosOrchard = trunk.x * toOrchard.x + trunk.y * toOrchard.y;
+    const cosRing = trunk.x * toRing.x + trunk.y * toRing.y;
+    // The orchard branch peels off square to the trunk; the ring branch runs on.
+    expect(Math.abs(cosOrchard)).toBeLessThan(0.02);
+    expect(cosRing).toBeGreaterThan(0.99);
+    // Nothing folds back: no branch points back the way the trunk came.
+    expect(cosOrchard).toBeGreaterThan(-0.02);
+  });
+
+  test("the drawn wedge is smaller, and the approach is shorter, than the two legs", () => {
+    const wedgeBefore = triangleArea(apex, orchard, ring);
+    const wedgeAfter = triangleArea(apex, fork, orchard);
+    expect(wedgeAfter).toBeLessThan(wedgeBefore * 0.6);
+    const before = distance(apex, orchard) + distance(apex, ring);
+    const after = distance(apex, fork) + distance(fork, orchard) + distance(fork, ring);
+    expect(after).toBeLessThan(before);
   });
 });

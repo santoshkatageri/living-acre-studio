@@ -7,8 +7,15 @@ import type { World } from "../sim/types";
 
 export interface ZoneLabels {
   group: THREE.Group;
+  /** Keep the labels legible at whole-acre and close zoom alike. */
+  setZoom(zoom: number): void;
   dispose(): void;
 }
+
+/** World size of a label at zoom 1, in feet. */
+const BASE_SCALE = { width: 14, height: 3.5 };
+/** How hard the labels shrink as the camera closes in: < 1 keeps them visible. */
+const ZOOM_EXPONENT = 0.65;
 
 const WIDTH = 512;
 const HEIGHT = 128;
@@ -52,8 +59,19 @@ export function createZoneLabels(world: World): ZoneLabels {
     group.add(sprite);
   }
 
+  const setZoom = (zoom: number): void => {
+    const factor = 1 / Math.pow(Math.max(zoom, 0.001), ZOOM_EXPONENT);
+    for (const child of group.children) {
+      if (child instanceof THREE.Sprite) {
+        child.scale.set(BASE_SCALE.width * factor, BASE_SCALE.height * factor, 1);
+      }
+    }
+  };
+  setZoom(1);
+
   return {
     group,
+    setZoom,
     dispose() {
       group.traverse((object) => {
         if (object instanceof THREE.Sprite) {

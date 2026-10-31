@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { orchardTrees } from "../sim/orchard";
 import type { World, Zone } from "../sim/types";
 
 /*  Ground, zone blocks and the two building shells.
@@ -86,26 +87,54 @@ function goshala(world: World, zone: Zone, group: THREE.Group): void {
   group.add(hay);
 }
 
-function orchard(zone: Zone, group: THREE.Group, canopy: string): void {
+function orchard(world: World, zone: Zone, group: THREE.Group): void {
   group.add(slab(zone, "#5a4632", zone.heightFt));
-  const spots: [number, number][] = [
-    [0.2, 0.25],
-    [0.5, 0.2],
-    [0.8, 0.3],
-    [0.3, 0.55],
-    [0.65, 0.6],
-    [0.45, 0.85],
-    [0.85, 0.8],
-  ];
-  for (const [fx, fy] of spots) {
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.6, 3.2, 6), standard("#6b4a30"));
-    trunk.position.set(zone.box.x + zone.box.widthFt * fx, 1.6, zone.box.y + zone.box.depthFt * fy);
-    group.add(trunk);
-    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(3.1, 1), standard(canopy));
-    crown.position.set(trunk.position.x, 5.2, trunk.position.z);
-    crown.scale.y = 0.8;
-    group.add(crown);
-  }
+  const trees = orchardTrees(world);
+  const canopyColour = new THREE.Color(world.palette["leaf"] ?? "#7c9a5d");
+
+  /*  Two instanced draws for the whole orchard — one for the trunks, one for
+      the canopies — whatever the tree count. Positions and sizes come from
+      src/sim/orchard.ts; the tint variation is per instance, from the seed. */
+  const trunks = new THREE.InstancedMesh(
+    new THREE.CylinderGeometry(0.24, 0.36, 1, 6),
+    standard("#6b4a30"),
+    trees.length,
+  );
+  trunks.name = "orchard:trunks";
+  const canopies = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(1, 1),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 }),
+    trees.length,
+  );
+  canopies.name = "orchard:canopies";
+
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const up = new THREE.Vector3(0, 1, 0);
+  const colour = new THREE.Color();
+
+  trees.forEach((tree, index) => {
+    quaternion.setFromAxisAngle(up, tree.rotationRad);
+    position.set(tree.x, zone.heightFt + tree.heightFt / 2, tree.y);
+    scale.set(1, tree.heightFt, 1);
+    matrix.compose(position, quaternion, scale);
+    trunks.setMatrixAt(index, matrix);
+
+    quaternion.setFromAxisAngle(up, tree.rotationRad * 1.7);
+    position.set(tree.x, zone.heightFt + tree.heightFt + tree.canopyFt * 0.55, tree.y);
+    scale.set(tree.canopyFt, tree.canopyFt * 0.82, tree.canopyFt);
+    matrix.compose(position, quaternion, scale);
+    canopies.setMatrixAt(index, matrix);
+    // 0 = the darker leaf, 1 = the lighter; the palette leaf is the midpoint.
+    canopies.setColorAt(index, colour.copy(canopyColour).multiplyScalar(0.82 + tree.tintMix * 0.36));
+  });
+
+  trunks.instanceMatrix.needsUpdate = true;
+  canopies.instanceMatrix.needsUpdate = true;
+  if (canopies.instanceColor) canopies.instanceColor.needsUpdate = true;
+  group.add(trunks, canopies);
 }
 
 function compost(zone: Zone, group: THREE.Group): void {
@@ -144,14 +173,15 @@ export function createWorldMesh(world: World): WorldMesh {
     if (zone.circle) continue; // the pond builds its own water and rim
     if (zone.look === "solid") farmhouse(world, zone, group);
     else if (zone.look === "open_shed") goshala(world, zone, group);
-    else if (zone.look === "canopy") orchard(zone, group, world.palette["leaf"] ?? "#7c9a5d");
+    else if (zone.look === "canopy") orchard(world, zone, group);
     else if (zone.look === "pits") compost(zone, group);
     else if (zone.look === "marker") {
       const post = boxMesh(0.6, 4.2, 0.6, standard("#8a6a44"));
       post.position.set(zone.box.x + zone.box.widthFt / 2, 2.1, zone.box.y + zone.box.depthFt / 2);
       post.name = "zone:gate";
       group.add(post);
-    } else group.add(slab(zone, "#3d5a3a", zone.heightFt));
+    } else if (zone.look === "beds") group.add(slab(zone, world.beds.soilTint, zone.heightFt));
+    else group.add(slab(zone, "#3d5a3a", zone.heightFt));
   }
 
   // Map outlines: one rectangle per zone, drawn on the ground.

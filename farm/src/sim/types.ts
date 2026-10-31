@@ -66,6 +66,18 @@ export interface DoorSpec {
 
 export type MovementMode = "free" | "paths_only";
 
+/** Lighting preset. Every value is data; nothing is tinted in code. */
+export interface LightPreset {
+  sky: string;
+  sunColour: string;
+  sunIntensity: number;
+  /** Compass angle of the sun: 0 = north, 90 = east, 180 = south. */
+  sunAzimuthDeg: number;
+  sunElevationDeg: number;
+  ambientColour: string;
+  ambientIntensity: number;
+}
+
 export interface World {
   parcel: Parcel;
   zoneKeys: string[];
@@ -91,4 +103,28 @@ export interface World {
   movement: { mode: MovementMode; freeZones: string[]; pathWidthFt: number; spawn: string };
   pondRing: { enabled: boolean; gapFt: number; widthFt: number; segments: number };
   doors: Record<string, DoorSpec>;
+  /** The vegetable bed's look: soil tint and the raised rows / edging. */
+  beds: {
+    soilTint: string;
+    rowLiftFt: number;
+    rowWidthFt: number;
+    edgingWidthFt: number;
+    edgingHeightFt: number;
+  };
+  /** The orchard's seeded tree grid (see src/sim/orchard.ts). */
+  orchard: {
+    seed: number;
+    cols: number;
+    rows: number;
+    marginFt: number;
+    jitterFt: number;
+    heightFt: [number, number];
+    canopyFt: [number, number];
+  };
+  lighting: {
+    defaultPreset: string;
+    shadowExtentFt: number;
+    shadowMapSize: number;
+    presets: Record<string, LightPreset>;
+  };
 }

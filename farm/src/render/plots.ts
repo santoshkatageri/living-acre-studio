@@ -13,9 +13,75 @@ export interface PlotView {
   dispose(): void;
 }
 
-export function createPlotView(grid: PlotGrid, baseY: number): PlotView {
+export interface BedsLook {
+  soilTint: string;
+  rowLiftFt: number;
+  rowWidthFt: number;
+  edgingWidthFt: number;
+  edgingHeightFt: number;
+}
+
+export function createPlotView(grid: PlotGrid, baseY: number, beds: BedsLook): PlotView {
   const group = new THREE.Group();
   group.name = "plot";
+
+  /*  The bed itself: a red-brown earth pad under the grid, ridge stripes on
+      every row boundary and an edging frame round the outside. The stripe
+      positions come from cellFt, so the whole thing follows the plot grid.
+      Pad + one instanced mesh for the ridges and the frame = two draws. */
+  const gridWidth = grid.cols * grid.cellFt;
+  const gridDepth = grid.rows * grid.cellFt;
+  const padWidth = gridWidth + beds.edgingWidthFt * 2;
+  const padDepth = gridDepth + beds.edgingWidthFt * 2;
+
+  const pad = new THREE.Mesh(
+    new THREE.BoxGeometry(padWidth, 0.14, padDepth),
+    new THREE.MeshStandardMaterial({ color: new THREE.Color(beds.soilTint), roughness: 1 }),
+  );
+  pad.position.set(grid.origin.x + gridWidth / 2, baseY + 0.03, grid.origin.y + gridDepth / 2);
+  pad.name = "plot:pad";
+  group.add(pad);
+
+  const ridgeCount = Math.max(grid.rows - 1, 0);
+  const bars = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshStandardMaterial({ color: new THREE.Color(beds.soilTint).multiplyScalar(1.18), roughness: 1 }),
+    ridgeCount + 4,
+  );
+  bars.name = "plot:ridges";
+  const barMatrix = new THREE.Matrix4();
+  const barPosition = new THREE.Vector3();
+  const barQuaternion = new THREE.Quaternion();
+  const barScale = new THREE.Vector3();
+  let barIndex = 0;
+  const placeBar = (x: number, y: number, z: number, width: number, height: number, depth: number): void => {
+    barPosition.set(x, y, z);
+    barScale.set(width, height, depth);
+    barMatrix.compose(barPosition, barQuaternion, barScale);
+    bars.setMatrixAt(barIndex, barMatrix);
+    barIndex += 1;
+  };
+  for (let row = 1; row < grid.rows; row += 1) {
+    placeBar(
+      grid.origin.x + gridWidth / 2,
+      baseY + beds.rowLiftFt / 2,
+      grid.origin.y + row * grid.cellFt,
+      gridWidth,
+      beds.rowLiftFt,
+      beds.rowWidthFt,
+    );
+  }
+  const edgeY = baseY + beds.edgingHeightFt / 2;
+  const edgeH = beds.edgingHeightFt;
+  const e = beds.edgingWidthFt;
+  // North, south, west, east — the frame round the grid, never inside it.
+  placeBar(grid.origin.x + gridWidth / 2, edgeY, grid.origin.y - e / 2, padWidth, edgeH, e);
+  placeBar(grid.origin.x + gridWidth / 2, edgeY, grid.origin.y + gridDepth + e / 2, padWidth, edgeH, e);
+  placeBar(grid.origin.x - e / 2, edgeY, grid.origin.y + gridDepth / 2, e, edgeH, gridDepth);
+  placeBar(grid.origin.x + gridWidth + e / 2, edgeY, grid.origin.y + gridDepth / 2, e, edgeH, gridDepth);
+  bars.count = barIndex;
+  bars.instanceMatrix.needsUpdate = true;
+  group.add(bars);
 
   const soilGeometry = new THREE.BoxGeometry(grid.cellFt * 0.92, 0.12, grid.cellFt * 0.92);
   const soilMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color("#4a3524"), roughness: 1 });

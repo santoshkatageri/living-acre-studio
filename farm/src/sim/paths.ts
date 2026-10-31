@@ -112,6 +112,26 @@ function boxCorners(box: { x: number; y: number; widthFt: number; depthFt: numbe
   ];
 }
 
+/**
+ * The fork point of the Y between the beds corner, the orchard and the ring.
+ *
+ * One trunk leaves the beds corner along the line to the FAR target (the ring)
+ * and the near target (the orchard) peels off at the foot of its perpendicular
+ * to that line. That is the shortest tree with a single shared trunk, and it
+ * never doubles back; the clamp keeps the fork on the trunk, not on the ring.
+ */
+export function orchardForkPoint(apex: Vec2, a: Vec2, b: Vec2): Vec2 {
+  const far = distance(apex, a) >= distance(apex, b) ? a : b;
+  const near = far === a ? b : a;
+  const length = distance(apex, far);
+  if (length === 0) throw new Error("paths: the orchard trunk has zero length");
+  const ux = (far.x - apex.x) / length;
+  const uy = (far.y - apex.y) / length;
+  const along = (near.x - apex.x) * ux + (near.y - apex.y) * uy;
+  const t = Math.min(Math.max(along, length * 0.15), length * 0.85);
+  return { x: round3(apex.x + ux * t), y: round3(apex.y + uy * t) };
+}
+
 /** The corner of a box nearest a point (the corner that faces it). */
 function nearestCorner(zone: Zone, from: Vec2): Corner {
   const corners = boxCorners(zone.box);
@@ -325,10 +345,19 @@ export function buildPathNetwork(world: World): PathNetwork {
   trunk("gate", "beds_sw"); // gate - beds
   trunk("beds_to_goshala", "goshala_door"); // beds - goshala door gap
   trunk("beds_to_farmhouse", "farmhouse_door"); // beds - farmhouse front door
-  trunk("beds_to_orchard", "orchard_sw"); // beds - orchard, the new direct link
   if (!ring) throw new Error("paths: the beds-to-pond trunk needs the ring");
-  trunk("beds_to_orchard", ring.entranceId); // beds - pond ring
-  trunk("orchard_sw", ring.entranceId); // orchard - ring, kept
+  /*  The wedge between the beds corner, the orchard and the ring is one trunk
+      that speaks once and then forks: beds corner -> fork -> orchard, and
+      fork -> ring. The old shape sent two long legs out of the same node at a
+      wide angle and left a wedge of open ground between them. */
+  const apex = nodePoint("beds_to_orchard");
+  const orchardPoint = nodePoint("orchard_sw");
+  const ringPoint = nodePoint(ring.entranceId);
+  add(node("orchard_fork", orchardForkPoint(apex, orchardPoint, ringPoint), "meet"));
+  trunk("beds_to_orchard", "orchard_fork"); // the shared trunk out of the beds corner
+  trunk("orchard_fork", "orchard_sw"); // beds - orchard, still a single edge
+  trunk("orchard_fork", ring.entranceId); // beds - pond ring
+  trunk("orchard_sw", ring.entranceId); // orchard - ring, kept: the loop closes
 
   /* ---- the loop around the beds block ---- */
   trunk("beds_sw", "beds_se");
@@ -348,7 +377,7 @@ export function buildPathNetwork(world: World): PathNetwork {
   const junctions = nodes.filter((entry) => (degree.get(entry.id) ?? 0) >= 3);
 
   /* ---- stepping stones on the crossing to the orchard ---- */
-  const stoneEdge = edges.find((edge) => edge.id === "beds_to_orchard--orchard_sw");
+  const stoneEdge = edges.find((edge) => edge.id === "beds_to_orchard--orchard_fork");
   const steppingStones = stoneEdge
     ? steppingStonesAlong(stoneEdge, world.paths, world.paths.seed + 7)
     : [];

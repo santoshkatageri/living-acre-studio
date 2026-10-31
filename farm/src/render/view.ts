@@ -21,6 +21,8 @@ export interface View {
   camera: THREE.OrthographicCamera;
   world3d: WorldMesh;
   actor: Actor;
+  /** The sunlight the scene was built with (morning / evening from data). */
+  sun: THREE.DirectionalLight;
   labels: ZoneLabels;
   plot: PlotView;
   water: WaterEffect;
@@ -44,7 +46,6 @@ export function createView(
   plotGrid: PlotGrid,
 ): View {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(world.palette["ink"] ?? "#12100d");
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -54,10 +55,41 @@ export function createView(
   let aspect = (container.clientWidth || 1) / (container.clientHeight || 1);
   const camera = createIsometricCamera(world, aspect);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 1.6));
-  const sun = new THREE.DirectionalLight(0xffe6bd, 2.2);
-  sun.position.set(-120, 220, -80);
-  scene.add(sun);
+  /*  Lighting: one warm directional sun with a soft shadow, plus a cool
+      ambient fill. Both presets live in sim_overrides.lighting; the default is
+      data too. Shadow extent is the parcel, so nothing is cut off. */
+  const presetName = world.lighting.defaultPreset;
+  const preset = world.lighting.presets[presetName];
+  if (!preset) throw new Error(`lighting preset "${presetName}" is not in the world`);
+  scene.background = new THREE.Color(preset.sky);
+
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  scene.add(new THREE.AmbientLight(new THREE.Color(preset.ambientColour), preset.ambientIntensity));
+  const sun = new THREE.DirectionalLight(new THREE.Color(preset.sunColour), preset.sunIntensity);
+  const azimuth = (preset.sunAzimuthDeg * Math.PI) / 180;
+  const elevation = (preset.sunElevationDeg * Math.PI) / 180;
+  const sunDistance = 420;
+  const centre = { x: world.parcel.widthFt / 2, y: world.parcel.depthFt / 2 };
+  sun.position.set(
+    centre.x + Math.sin(azimuth) * Math.cos(elevation) * sunDistance,
+    Math.sin(elevation) * sunDistance,
+    centre.y - Math.cos(azimuth) * Math.cos(elevation) * sunDistance,
+  );
+  sun.target.position.set(centre.x, 0, centre.y);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(world.lighting.shadowMapSize, world.lighting.shadowMapSize);
+  const extent = world.lighting.shadowExtentFt;
+  sun.shadow.camera.left = -extent;
+  sun.shadow.camera.right = extent;
+  sun.shadow.camera.top = extent;
+  sun.shadow.camera.bottom = -extent;
+  sun.shadow.camera.near = 1;
+  sun.shadow.camera.far = 1200;
+  sun.shadow.bias = -0.0004;
+  sun.shadow.normalBias = 0.05;
+  scene.add(sun, sun.target);
 
   const world3d = createWorldMesh(world);
   scene.add(world3d.group);
@@ -75,7 +107,7 @@ export function createView(
   const paths = createPaths(world, walkable);
   scene.add(paths.group);
 
-  const plot = createPlotView(plotGrid, plotBaseY);
+  const plot = createPlotView(plotGrid, plotBaseY, world.beds);
   plot.sync(plotGrid);
   scene.add(plot.group);
 
@@ -94,10 +126,20 @@ export function createView(
     zoomLevel = zoom;
     applyZoom(camera, world, aspect, zoom);
     focusCamera(camera, world, { x: focusX, y: focusY });
+    labels.setZoom(zoom);
   };
 
   focusCamera(camera, world, { x: focusX, y: focusY });
   applyZoomLevel(1);
+
+  /*  Shadows: everything solid casts and receives, the ground only receives,
+      and the labels / HUD sprites stay out of the shadow pass. */
+  scene.traverse((object) => {
+    if (object instanceof THREE.Mesh) {
+      object.receiveShadow = true;
+      object.castShadow = object.name !== "ground";
+    }
+  });
 
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -110,6 +152,7 @@ export function createView(
     camera,
     world3d,
     actor,
+    sun,
     labels,
     plot,
     water,

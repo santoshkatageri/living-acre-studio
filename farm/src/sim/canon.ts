@@ -71,6 +71,39 @@ interface OverridesFile {
     doors: Record<string, { side: DoorSide; offset_ft: number; gap_ft: number }>;
     tints: Record<string, string>;
     markers: Record<string, { label: string; height_ft: number }>;
+    beds_look: {
+      soil_tint: string;
+      row_lift_ft: number;
+      row_width_ft: number;
+      edging_width_ft: number;
+      edging_height_ft: number;
+    };
+    orchard_look: {
+      seed: number;
+      cols: number;
+      rows: number;
+      margin_ft: number;
+      jitter_ft: number;
+      height_ft: [number, number];
+      canopy_ft: [number, number];
+    };
+    lighting: {
+      default_preset: string;
+      shadow_extent_ft: number;
+      shadow_map_size: number;
+      presets: Record<
+        string,
+        {
+          sky: string;
+          sun_colour: string;
+          sun_intensity: number;
+          sun_azimuth_deg: number;
+          sun_elevation_deg: number;
+          ambient_colour: string;
+          ambient_intensity: number;
+        }
+      >;
+    };
   };
 }
 
@@ -176,6 +209,17 @@ export function createWorld(): World {
   for (const key of overrides.overrides.movement.free_zones) {
     if (!seen.has(key)) throw new Error(`movement.free_zones names an unknown zone "${key}"`);
   }
+  const presetNames = Object.keys(overrides.overrides.lighting.presets);
+  if (!presetNames.includes(overrides.overrides.lighting.default_preset)) {
+    throw new Error(
+      `lighting.default_preset "${overrides.overrides.lighting.default_preset}" is not one of ${presetNames.join(", ")}`,
+    );
+  }
+  for (const [name, preset] of Object.entries(overrides.overrides.lighting.presets)) {
+    if (preset.sun_elevation_deg <= 0 || preset.sun_elevation_deg >= 90) {
+      throw new Error(`lighting.presets.${name}.sun_elevation_deg must be between 0 and 90`);
+    }
+  }
   if (overrides.overrides.pond_ring.gap_ft < 1) {
     throw new Error("pond_ring.gap_ft is below 1 ft; that needs a decision, not a silent change");
   }
@@ -279,6 +323,41 @@ export function createWorld(): World {
       segments: overrides.overrides.pond_ring.segments,
     },
     doors,
+    beds: {
+      soilTint: overrides.overrides.beds_look.soil_tint,
+      rowLiftFt: overrides.overrides.beds_look.row_lift_ft,
+      rowWidthFt: overrides.overrides.beds_look.row_width_ft,
+      edgingWidthFt: overrides.overrides.beds_look.edging_width_ft,
+      edgingHeightFt: overrides.overrides.beds_look.edging_height_ft,
+    },
+    orchard: {
+      seed: overrides.overrides.orchard_look.seed,
+      cols: overrides.overrides.orchard_look.cols,
+      rows: overrides.overrides.orchard_look.rows,
+      marginFt: overrides.overrides.orchard_look.margin_ft,
+      jitterFt: overrides.overrides.orchard_look.jitter_ft,
+      heightFt: overrides.overrides.orchard_look.height_ft,
+      canopyFt: overrides.overrides.orchard_look.canopy_ft,
+    },
+    lighting: {
+      defaultPreset: overrides.overrides.lighting.default_preset,
+      shadowExtentFt: overrides.overrides.lighting.shadow_extent_ft,
+      shadowMapSize: overrides.overrides.lighting.shadow_map_size,
+      presets: Object.fromEntries(
+        Object.entries(overrides.overrides.lighting.presets).map(([key, preset]) => [
+          key,
+          {
+            sky: preset.sky,
+            sunColour: preset.sun_colour,
+            sunIntensity: preset.sun_intensity,
+            sunAzimuthDeg: preset.sun_azimuth_deg,
+            sunElevationDeg: preset.sun_elevation_deg,
+            ambientColour: preset.ambient_colour,
+            ambientIntensity: preset.ambient_intensity,
+          },
+        ]),
+      ),
+    },
   };
 }
 

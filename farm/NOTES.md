@@ -23,8 +23,8 @@ farm/
 
 ## The path network (M4)
 
-One shared graph, built from canon geometry. **60 nodes, 62 edges, 5 junctions,
-775.36 ft of trail.**
+One shared graph, built from canon geometry. **61 nodes, 63 edges, 6 junctions,
+768.14 ft of trail.**
 
 | node | feet | role |
 | --- | --- | --- |
@@ -37,18 +37,20 @@ One shared graph, built from canon geometry. **60 nodes, 62 edges, 5 junctions,
 | ring_30 | 153.95, 145.04 | entrance: pond ring |
 | beds_to_goshala / beds_to_farmhouse / beds_to_orchard | 75.52,74.99 · 34.94,74.99 · 105.08,103.83 | meets |
 | beds_nw / beds_se / beds_ne | 25.08,74.99 · 105.08,144.99 · 105.08,74.99 | corners |
+| orchard_fork | 116.95, 113.84 | the fork of the Y |
 | ring_0 … ring_47 | r 27.6 ft around 173.47, 164.56 | ring |
 
-**Edges.** Seven radial trunks: gate–compost 29.16, gate–beds 63.59,
-beds–goshala door 34.32, beds–farmhouse door 40.49, beds–orchard 20.32,
-beds–ring 63.93, orchard–ring 50.14. Seven beds-perimeter runs closing the
+**Edges.** Eight radial trunks: gate–compost 29.16, gate–beds 63.59,
+beds–goshala door 34.32, beds–farmhouse door 40.49, and the Y — beds–fork
+15.53, fork–orchard 13.10, fork–ring 48.40, orchard–ring 50.14. Seven beds-perimeter runs closing the
 block (80.00, 41.16, 28.84, 29.56, 40.58, 9.86, 70.00), and 48 ring arcs of
 3.61 ft. Every trunk is a single edge; no pair of nodes is joined twice.
 
 Three cycles: the pond ring, the beds perimeter, and the orchard triangle
-(beds–orchard–ring–beds). The four bridges are the dead ends: gate–compost,
-gate–beds, beds–goshala, beds–farmhouse. Cutting the beds trunk splits the
-map away from the gate — the failing-test proof below.
+(fork–orchard–ring–fork). Five bridges: the four dead ends (gate–compost,
+gate–beds, beds–goshala, beds–farmhouse) and the orchard fork trunk, which now
+carries both the orchard and the ring. Cutting the orchard link is the proof
+below.
 
 **The bed.** 5 x 5 cells of **4 ft** (`plot.cell_ft` in
 `data/sim_overrides.json`, default 4 ft), so the planted block is 20 x 20 ft,
@@ -68,7 +70,7 @@ for 10 prints `"10 / 10"`, so the number is read, not written into the UI.
 | vegetable beds | 63.91 ft | 63.59 | 1.01 |
 | goshala | 183.19 ft | 179.24 | 1.02 |
 | farmhouse | 173.64 ft | 173.18 | 1.00 |
-| orchard | 178.35 ft | 158.29 | 1.13 |
+| orchard | 180.60 ft | 158.29 | 1.14 |
 | pond ring | 220.60 ft | 161.89 | 1.36 |
 
 **Pond ring.** `pond_ring: {gap 2, width 4, segments 48}`. Centreline radius
@@ -104,14 +106,69 @@ Two details that matter:
 `languages.hi` and `.kn` marked `needs_review` and the HUD saying so. Open
 ground still reads "open ground"; a zone keeps its canon name.
 
+## The polish pass
+
+- **Beds.** `beds_look.soil_tint` (#6b3a28, PLACEHOLDER) replaces the old green
+  slab. Under the 5 x 5 grid sits an earth pad, and one instanced mesh carries
+  the ridges on every row boundary plus the four edging strips — the positions
+  are `cellFt` arithmetic, so they follow the plot grid. Two draws for the pad
+  and the ridges, one for the soil tiles, one for the crops. Orchard stays
+  green: its slab and canopies are untouched.
+- **Orchard density.** 7 hand-placed trees became **16 seeded ones** in
+  `src/sim/orchard.ts`: a 4 x 4 staggered grid, jitter clipped so a canopy can
+  never leave the canon orchard box, sizes from `orchard_look`.
+  Determinism, in-bounds, count (12–20) and “no two trees overlap” are tested.
+  Two instanced draws for the whole orchard (trunks, canopies) instead of 14.
+- **The Y wedge.** The beds corner used to send two long legs out at a wide
+  angle — to the orchard (20.32 ft) and to the ring (63.93 ft) — leaving a
+  wedge of open ground. Now one trunk runs 15.53 ft along the line to the ring
+  and the orchard peels off at the foot of its perpendicular (13.10 ft); the
+  ring branch carries on 48.40 ft. Drawn wedge 101.8 sq ft instead of 209.4,
+  approach 77.03 ft instead of 84.25, cycle rank still 3. Cost, stated plainly:
+  the trunk is now a **bridge** — cut it and the orchard and the ring are both
+  stranded — where the old two legs each had a way round.
+- **Labels.** `labels.setZoom(zoom)` scales the sprites by `zoom^-0.65`, so the
+  names stay readable at the whole-acre view without swallowing the map when
+  the camera closes in.
+- **Light.** One warm directional sun with `PCFSoftShadowMap`, plus a cool
+  ambient fill. Both presets live in `lighting.presets` (morning / evening,
+  azimuth + elevation, sky, sun and ambient colours, intensities), with the
+  shadow map size and extent in data. `lighting.default_preset` picks one; there
+  is **no key binding** — flipping the value is the switch, because a new key
+  would be a feature nobody asked for.
+
+## Buffer belt and perimeter walk: fit check (nothing built)
+
+Both were specified with numbers that do not fit the canon parcel. Measured
+clearance from each zone to the parcel boundary (feet):
+
+| side | closest zones | belt 14 ft | walk centreline 18.5 ft |
+| --- | --- | --- | --- |
+| west | gate 3.00 · farmhouse 12.54 · compost 16.72 | farmhouse 1.46 ft inside | farmhouse 5.96 ft short |
+| north | farmhouse 12.50 · goshala 16.66 | farmhouse 1.50 ft inside | 6.00 ft short |
+| east | pond 15.53 · orchard 17.60 | ok, 1.53 ft spare | pond 2.97 ft short |
+| south | gate 3.00 · pond 23.74 | gate (the gap) | 15.50 ft short |
+
+The pond ring is the harder one: its outer edge reaches 5.93 ft from the east
+boundary and 14.14 ft from the south, so it sits 8.07 ft inside a 14 ft belt on
+the east.
+
 ## Render budget
 
-Counted the way the renderer counts (visible + inside the frustum): **60 draw
-calls / 8,317 triangles** at the whole-acre view, **61 / 9,275** with the `P`
-overlay showing (the overlay is 1 call / 958 triangles). The whole trail network
-is one merged ribbon of 1,732 vertices plus one instanced draw for the stones.
-Budget 300 / 150,000. `renderer.info` itself needs a live GL context, so this
-mirrors its accounting in node instead.
+Counted the way the renderer counts, in node, with the same script before and
+after the polish pass:
+
+| | draw calls | triangles |
+| --- | --- | --- |
+| before (commit 529ce43) | 60 | 8,317 |
+| after, visible pass | **50** | **9,387** |
+| after, + shadow pass (42 casters) | **92** | **18,305** |
+
+Triangles went up because 16 instanced canopies replaced 7 loose ones; calls
+went down because the orchard is two instanced draws and the labels are sprites.
+Budget 300 / 150,000. `renderer.info` needs a live GL context, so this mirrors
+its accounting (sprites counted as one call, shadow casters drawn twice) rather
+than reading the GPU.
 
 ## Controls
 

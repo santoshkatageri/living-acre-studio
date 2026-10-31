@@ -166,6 +166,58 @@
         "label": "Compost",
         "height_ft": 2.2
       }
+    },
+    "beds_look": {
+      "soil_tint": "#6b3a28",
+      "row_lift_ft": 0.24,
+      "row_width_ft": 2.4,
+      "edging_width_ft": 0.45,
+      "edging_height_ft": 0.3,
+      "note": "PLACEHOLDER — the red-brown laterite soil, the raised rows and the edging are eyeballed from the hero image. Rows and edging are aligned to the plot grid in src/render, never typed as feet."
+    },
+    "orchard_look": {
+      "seed": 4242,
+      "cols": 4,
+      "rows": 4,
+      "margin_ft": 9,
+      "jitter_ft": 2.2,
+      "height_ft": [
+        3.4,
+        4.8
+      ],
+      "canopy_ft": [
+        2.3,
+        3.2
+      ],
+      "note": "PLACEHOLDER — 4 x 4 = 16 trees on a seeded grid, the count and the canopy sizes eyeballed from the hero image. Deterministic per seed; positions and sizes come from src/sim/orchard.ts."
+    },
+    "lighting": {
+      "default_preset": "morning",
+      "shadow_extent_ft": 150,
+      "shadow_map_size": 1024,
+      "note": "PLACEHOLDER — both presets are eyeballed, not canon. No key binding: switching preset is the default_preset value.",
+      "presets": {
+        "morning": {
+          "sky": "#1b1712",
+          "sun_colour": "#ffe6bd",
+          "sun_intensity": 2.4,
+          "sun_azimuth_deg": 118,
+          "sun_elevation_deg": 38,
+          "ambient_colour": "#c9d3e2",
+          "ambient_intensity": 1.05,
+          "note": "PLACEHOLDER — low warm sun from the south-east."
+        },
+        "evening": {
+          "sky": "#141017",
+          "sun_colour": "#ffb277",
+          "sun_intensity": 2.0,
+          "sun_azimuth_deg": 250,
+          "sun_elevation_deg": 21,
+          "ambient_colour": "#b6aec6",
+          "ambient_intensity": 0.85,
+          "note": "PLACEHOLDER — warm sun low from the west, cooler fill."
+        }
+      }
     }
   }
 }

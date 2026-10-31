@@ -120,3 +120,53 @@ describe("the world is the canon", () => {
     expect(Math.hypot((node?.x ?? 0) - nearest.x, (node?.y ?? 0) - nearest.y)).toBeCloseTo(0, 6);
   });
 });
+
+describe("the look pass is data, not code", () => {
+  test("the beds are red-brown earth and the orchard keeps the leaf green", () => {
+    const leaf = (WORLD.palette["leaf"] ?? "").toLowerCase();
+    expect(WORLD.beds.soilTint.toLowerCase()).not.toBe(leaf);
+    // The beds tint is a placeholder, so it must be a colour the data owns.
+    expect(WORLD.beds.soilTint).toMatch(/^#[0-9a-f]{6}$/i);
+    for (const key of ["rowLiftFt", "rowWidthFt", "edgingWidthFt", "edgingHeightFt"] as const) {
+      expect(WORLD.beds[key], key).toBeGreaterThan(0);
+    }
+    // A ridge must fit inside one cell, or the rows would swallow the cells.
+    expect(WORLD.beds.rowWidthFt).toBeLessThan(WORLD.plot.cellFt);
+  });
+
+  test("both lighting presets exist, are labelled, and are usable", () => {
+    const names = Object.keys(WORLD.lighting.presets).sort();
+    expect(names).toEqual(["evening", "morning"]);
+    expect(names).toContain(WORLD.lighting.defaultPreset);
+    for (const [name, preset] of Object.entries(WORLD.lighting.presets)) {
+      expect(preset.sunColour, name).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(preset.ambientColour, name).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(preset.sky, name).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(preset.sunIntensity, name).toBeGreaterThan(0);
+      expect(preset.ambientIntensity, name).toBeGreaterThan(0);
+      expect(preset.sunElevationDeg, name).toBeGreaterThan(0);
+      expect(preset.sunElevationDeg, name).toBeLessThan(90);
+      expect(preset.sunAzimuthDeg, name).toBeGreaterThanOrEqual(0);
+      expect(preset.sunAzimuthDeg, name).toBeLessThan(360);
+    }
+    // Morning and evening are different light, not the same numbers twice.
+    const morning = WORLD.lighting.presets["morning"];
+    const evening = WORLD.lighting.presets["evening"];
+    expect(morning?.sunAzimuthDeg).not.toBe(evening?.sunAzimuthDeg);
+    expect(WORLD.lighting.shadowExtentFt).toBeGreaterThan(Math.max(WORLD.parcel.widthFt, WORLD.parcel.depthFt) / 2);
+  });
+
+  test("the placeholders in the new data say PLACEHOLDER", () => {
+    const overrides = overridesJson as unknown as {
+      overrides: { beds_look: { note: string }; orchard_look: { note: string }; lighting: { note: string; presets: Record<string, { note: string }> } };
+    };
+    for (const note of [
+      overrides.overrides.beds_look.note,
+      overrides.overrides.orchard_look.note,
+      overrides.overrides.lighting.note,
+      ...Object.values(overrides.overrides.lighting.presets).map((preset) => preset.note),
+    ]) {
+      expect(note).toContain("PLACEHOLDER");
+    }
+  });
+});
