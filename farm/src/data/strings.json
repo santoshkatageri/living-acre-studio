@@ -1,0 +1,21 @@
+{
+  "note": "UI strings. English is approved. Hindi and Kannada are developer DRAFTS written by a non-native speaker; the language record marks both needs_review and the HUD says so at runtime.",
+  "languages": {
+    "en": { "name": "English", "status": "approved" },
+    "hi": { "name": "हिन्दी", "status": "needs_review" },
+    "kn": { "name": "ಕನ್ನಡ", "status": "needs_review" }
+  },
+  "strings": {
+    "place.path": { "en": "Path", "hi": "रास्ता", "kn": "ಹಾದಿ" },
+    "place.outside": { "en": "open ground", "hi": "खुली ज़मीन", "kn": "ತೆರೆದ ನೆಲ" },
+    "hud.tank": { "en": "tank", "hi": "टंकी", "kn": "ಟ್ಯಾಂಕ್" },
+    "hud.day": { "en": "day", "hi": "दिन", "kn": "ದಿನ" },
+    "draft": { "en": "draft", "hi": "प्रारूप", "kn": "ಕರಡು" },
+    "tool.till": { "en": "Till", "hi": "जोतें", "kn": "ಉಳುಮೆ" },
+    "tool.plant-tomato": { "en": "Tomato", "hi": "टमाटर", "kn": "ಟೊಮೆಟೊ" },
+    "tool.plant-palak": { "en": "Palak", "hi": "पालक", "kn": "ಪಾಲಕ್" },
+    "tool.water": { "en": "Water", "hi": "पानी", "kn": "ನೀರು" },
+    "tool.refill": { "en": "Refill", "hi": "भरें", "kn": "ತುಂಬಿಸು" },
+    "hint.stayOnPath": { "en": "Stay on the path", "hi": "रास्ते पर रहें", "kn": "ಹಾದಿಯಲ್ಲೇ ಇರಿ" }
+  }
+}

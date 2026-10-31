@@ -1,0 +1,171 @@
+{
+  "_note": "Everything the canon does not fix. Canon values are never repeated here. Look values marked PLACEHOLDER are eyeballed from the hero image and are not canon.",
+  "overrides": {
+    "zones": {
+      "farmhouse": {
+        "walkable": false,
+        "look": "solid",
+        "heights_ft": 9
+      },
+      "goshala": {
+        "walkable": true,
+        "look": "open_shed",
+        "heights_ft": 6
+      },
+      "orchard": {
+        "walkable": true,
+        "look": "canopy",
+        "heights_ft": 0.3
+      },
+      "vegetable_beds": {
+        "walkable": true,
+        "look": "beds",
+        "heights_ft": 0.6
+      },
+      "pond": {
+        "walkable": false,
+        "look": "solid",
+        "heights_ft": 0
+      },
+      "compost": {
+        "walkable": true,
+        "look": "pits",
+        "heights_ft": 1.1
+      },
+      "gate": {
+        "walkable": true,
+        "look": "marker",
+        "heights_ft": 0.25
+      }
+    },
+    "zone_placeholders": {
+      "compost": {
+        "note": "PLACEHOLDER — canon declares no size for loc-compost. 8 x 8 ft at the canon position, eyeballed from the hero image.",
+        "size_ft": {
+          "width_ft": 8,
+          "depth_ft": 8
+        }
+      },
+      "gate": {
+        "note": "PLACEHOLDER — no gate asset in the Asset Bible. One 1 x 1 ft post inset 3 ft from the south-west corner, per the brief.",
+        "size_ft": {
+          "width_ft": 1,
+          "depth_ft": 1
+        },
+        "inset_ft": 3
+      }
+    },
+    "player": {
+      "radius_ft": 1,
+      "speed_ft_per_s": 14,
+      "spawn_ft": {
+        "x": 3.5,
+        "y": 204.8
+      }
+    },
+    "camera": {
+      "pitch_deg": 35,
+      "yaw_deg": 45,
+      "max_zoom": 4,
+      "overview_margin": 1.06
+    },
+    "clock": {
+      "day_seconds": 240,
+      "start_hour": 6,
+      "note": "One in-game day per four real minutes, so growth is observable."
+    },
+    "plot": {
+      "zone": "vegetable_beds",
+      "rows": 5,
+      "cols": 5,
+      "cell_ft": 10,
+      "note": "The storyboard's 5 x 5 bed, centred in the canon vegetable_beds zone."
+    },
+    "water": {
+      "capacity": 24,
+      "per_use": 1,
+      "pause_per_use_s": 0.35,
+      "refill_buffer_ft": 4,
+      "refill_zone": "pond",
+      "note": "Refill only beside the pond; 4 ft is the trickle-path buffer around the rim."
+    },
+    "growth": {
+      "stages_per_day": 1,
+      "note": "One visual stage per in-game day while watered."
+    },
+    "pond_look": {
+      "seed": 20261031,
+      "rim_inner_ft": 0.35,
+      "rim_outer_ft": 3.6,
+      "stone_count": 132,
+      "lily_pad_count": 9,
+      "stone_size_ft": [
+        0.9,
+        1.6
+      ],
+      "note": "PLACEHOLDER — stone count, sizes and the rim thickness are eyeballed from the hero image. rim_outer_ft is the thickness the pond-ring keep-out is measured from."
+    },
+    "paths_look": {
+      "seed": 7717,
+      "width_ft": 5,
+      "colour": "#8a4a33",
+      "stepping_interval_ft": 6,
+      "stepping_jitter_ft": 0.6,
+      "stepping_size_ft": 1.1,
+      "note": "PLACEHOLDER — laterite red and the stepping-stone rhythm are eyeballed from the hero image."
+    },
+    "movement": {
+      "mode": "paths_only",
+      "free_zones": [
+        "goshala",
+        "vegetable_beds",
+        "compost",
+        "orchard"
+      ],
+      "path_width_ft": 5,
+      "spawn": "gate",
+      "note": "paths_only: free zones plus path corridors, nothing else. free: the pre-M3 rule, kept for comparison."
+    },
+    "pond_ring": {
+      "enabled": true,
+      "gap_ft": 2,
+      "width_ft": 4,
+      "segments": 48,
+      "note": "Ring centreline = pond radius + rim_outer_ft + gap + half its width. Inner edge lands exactly on the keep-out; gap never below 1 ft."
+    },
+    "doors": {
+      "farmhouse": {
+        "side": "south",
+        "offset_ft": 22.4,
+        "gap_ft": 5,
+        "note": "Front door on the south face, 22.4 ft east of the west edge (the canon says the door opens east)."
+      },
+      "goshala": {
+        "side": "south",
+        "offset_ft": 17,
+        "gap_ft": 8,
+        "note": "The open gap in the south face, centred on the shed's 34 ft width."
+      }
+    },
+    "tints": {
+      "stone": "#7a7367",
+      "water": "#3f6b63",
+      "soil": "#6e4a2f",
+      "laterite": "#8a4a33",
+      "thatch": "#8d7448",
+      "leaf": "#4c6b32",
+      "tomato": "#b8392a",
+      "note": "PLACEHOLDER — eyeballed from the hero image."
+    },
+    "markers": {
+      "gate": {
+        "label": "Gate",
+        "height_ft": 4.5
+      },
+      "compost": {
+        "label": "Compost",
+        "height_ft": 2.2
+      }
+    }
+  }
+}

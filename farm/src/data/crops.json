@@ -1,0 +1,21 @@
+{
+  "note": "Crop definitions. Colours are canon values: tomato #b8392a and palak #4c6b32 are both in the canon vegetable_beds palette. Hindi and Kannada names are developer DRAFTS, not native-speaker reviewed; every one is flagged needs_review and must be confirmed before release.",
+  "crops": [
+    {
+      "id": "tomato",
+      "name": { "en": "Tomato", "hi": "टमाटर", "kn": "ಟೊಮೇಟೊ" },
+      "status": { "en": "approved", "hi": "needs_review", "kn": "needs_review" },
+      "stages": 4,
+      "days_per_stage": 1,
+      "colour": "#b8392a"
+    },
+    {
+      "id": "palak",
+      "name": { "en": "Palak", "hi": "पालक", "kn": "ಪಾಲಕ್" },
+      "status": { "en": "approved", "hi": "needs_review", "kn": "needs_review" },
+      "stages": 4,
+      "days_per_stage": 1,
+      "colour": "#4c6b32"
+    }
+  ]
+}

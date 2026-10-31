@@ -1,0 +1,209 @@
+:root {
+  color-scheme: dark;
+  --ink: #12100d;
+  --paper: #1b1712;
+  --cream: #f1ead9;
+  --amber: #e8a33d;
+  --leaf: #7c9a5d;
+  --terra: #c2613e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+#app canvas {
+  display: block;
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hud__panel {
+  position: absolute;
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cream) 16%, transparent);
+  border-radius: 10px;
+  padding: 10px 14px;
+  backdrop-filter: blur(4px);
+}
+
+.hud__panel--top {
+  top: 16px;
+  left: 16px;
+  min-width: 190px;
+}
+
+.hud__panel--side {
+  top: 16px;
+  right: 16px;
+  min-width: 180px;
+}
+
+.hud__panel--bottom {
+  left: 16px;
+  bottom: 16px;
+  min-width: 240px;
+}
+
+.hud__clock {
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.hud__bar {
+  position: relative;
+  height: 4px;
+  margin: 6px 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cream) 14%, transparent);
+  overflow: hidden;
+}
+
+.hud__bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: var(--amber);
+  transition: width 140ms linear;
+}
+
+.hud__bar--tank {
+  height: 8px;
+}
+
+.hud__bar-fill--tank {
+  background: var(--leaf);
+}
+
+.hud__day,
+.hud__lang,
+.hud__hover {
+  font-size: 12px;
+  opacity: 0.72;
+}
+
+.hud__place {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--amber);
+}
+
+.hud__pos,
+.hud__cell {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud__cell {
+  opacity: 0.85;
+}
+
+.hud__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
+.hud__tank-text {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud__lang {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--cream) 12%, transparent);
+}
+
+.hud__keys {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: 0.55;
+  max-width: 200px;
+}
+
+.hud__message {
+  position: absolute;
+  left: 50%;
+  bottom: 92px;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cream) 18%, transparent);
+  font-size: 13px;
+}
+
+.hud__message[data-kind="error"] {
+  border-color: color-mix(in srgb, var(--terra) 65%, transparent);
+  color: #ffd9c9;
+}
+
+.hud__message[data-kind="ok"] {
+  border-color: color-mix(in srgb, var(--leaf) 65%, transparent);
+}
+
+.toolbar {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.toolbar__button {
+  position: relative;
+  min-width: 76px;
+  padding: 10px 12px 16px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--cream) 18%, transparent);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  color: var(--cream);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.toolbar__button:hover {
+  border-color: color-mix(in srgb, var(--amber) 60%, transparent);
+}
+
+.toolbar__button[data-active="yes"] {
+  border-color: var(--amber);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amber) 55%, transparent);
+}
+
+.toolbar__button--lang {
+  min-width: 52px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.toolbar__key {
+  position: absolute;
+  right: 8px;
+  bottom: 4px;
+  font-size: 10px;
+  opacity: 0.5;
+}

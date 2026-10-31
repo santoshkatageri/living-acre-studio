@@ -1,0 +1,305 @@
+{
+  "schema_version": "1.0.0",
+  "generated_by": "scripts/export-canon.ts",
+  "source": {
+    "asset_bible": "src/lib/studio/assets.ts",
+    "brand": "src/lib/studio/constants.ts#BRAND",
+    "canon_version": "v1",
+    "rule": "Identity fields are frozen. Values are exported verbatim; derived fields are documented in `derivations`."
+  },
+  "derivations": {
+    "position_ft": "position_percent / 100 × parcel width_ft (x, w) or depth_ft (y, h), rounded to 3 decimals. Percentages are authoritative.",
+    "area_check_sq_ft": "parcel.width_ft × parcel.depth_ft, rounded to 3 decimals.",
+    "gate_side": "Extracted from loc-boundary.description; the Asset Bible has no gate record."
+  },
+  "parcel": {
+    "source_asset_id": "loc-boundary",
+    "width_ft": 209,
+    "depth_ft": 208.3,
+    "total_sq_ft": 43560,
+    "area_check_sq_ft": 43534.7,
+    "area_delta_sq_ft": -25.3,
+    "gate_side": "south-west",
+    "notes": "Location is fixed canon. Do not move, resize or reorient."
+  },
+  "palette": {
+    "ink": "#12100d",
+    "paper": "#1b1712",
+    "cream": "#f1ead9",
+    "amber": "#e8a33d",
+    "leaf": "#7c9a5d",
+    "terra": "#c2613e"
+  },
+  "zones": [
+    {
+      "key": "farmhouse",
+      "asset_id": "loc-farmhouse",
+      "name": "Farmhouse",
+      "subtitle": "Terracotta roof · our door opens east",
+      "size_ft": {
+        "width_ft": 30,
+        "depth_ft": 22
+      },
+      "source_dimensions": {
+        "widthFt": 30,
+        "depthFt": 22
+      },
+      "position_percent": {
+        "x": 6,
+        "y": 6,
+        "w": 16,
+        "h": 13
+      },
+      "position_ft": {
+        "x": 12.54,
+        "y": 12.498,
+        "width_ft": 33.44,
+        "depth_ft": 27.079
+      },
+      "palette": [
+        "#a34d2f",
+        "#dcb98a",
+        "#5c4033"
+      ],
+      "identity_tokens": [
+        "terracotta tiled roof",
+        "teak door opening east",
+        "swept courtyard"
+      ],
+      "notes": null
+    },
+    {
+      "key": "goshala",
+      "asset_id": "loc-goshala",
+      "name": "Goshala",
+      "subtitle": "North side · Ganga's home",
+      "size_ft": {
+        "width_ft": 34,
+        "depth_ft": 24
+      },
+      "source_dimensions": {
+        "widthFt": 34,
+        "depthFt": 24
+      },
+      "position_percent": {
+        "x": 28,
+        "y": 8,
+        "w": 22,
+        "h": 12
+      },
+      "position_ft": {
+        "x": 58.52,
+        "y": 16.664,
+        "width_ft": 45.98,
+        "depth_ft": 24.996
+      },
+      "palette": [],
+      "identity_tokens": [
+        "wooden post grid",
+        "hay bed",
+        "stone trough"
+      ],
+      "notes": null
+    },
+    {
+      "key": "orchard",
+      "asset_id": "loc-orchard",
+      "name": "Orchard",
+      "subtitle": "Mango · sapota · a young drumstick line",
+      "size_ft": {
+        "width_ft": 66,
+        "depth_ft": 58
+      },
+      "source_dimensions": {
+        "widthFt": 66,
+        "depthFt": 58
+      },
+      "position_percent": {
+        "x": 60,
+        "y": 22,
+        "w": 34,
+        "h": 28
+      },
+      "position_ft": {
+        "x": 125.4,
+        "y": 45.826,
+        "width_ft": 71.06,
+        "depth_ft": 58.324
+      },
+      "palette": [],
+      "identity_tokens": [
+        "mango canopy",
+        "drip line",
+        "leaf mulch"
+      ],
+      "notes": null
+    },
+    {
+      "key": "vegetable_beds",
+      "asset_id": "loc-vegbeds",
+      "name": "Vegetable beds",
+      "subtitle": "Tomatoes in season",
+      "size_ft": {
+        "width_ft": 80,
+        "depth_ft": 70
+      },
+      "source_dimensions": {
+        "widthFt": 80,
+        "depthFt": 70
+      },
+      "position_percent": {
+        "x": 12,
+        "y": 36,
+        "w": 44,
+        "h": 38
+      },
+      "position_ft": {
+        "x": 25.08,
+        "y": 74.988,
+        "width_ft": 91.96,
+        "depth_ft": 79.154
+      },
+      "palette": [
+        "#6e4a2f",
+        "#4c6b32",
+        "#b8392a"
+      ],
+      "identity_tokens": [
+        "raised beds",
+        "marigold borders",
+        "red laterite paths"
+      ],
+      "notes": null
+    },
+    {
+      "key": "pond",
+      "asset_id": "loc-pond",
+      "name": "Pond",
+      "subtitle": "Rain-fed · our water bank",
+      "size_ft": {
+        "diameter_ft": 40
+      },
+      "source_dimensions": {
+        "diameterFt": 40
+      },
+      "position_percent": {
+        "x": 70,
+        "y": 66,
+        "w": 26,
+        "h": 26
+      },
+      "position_ft": {
+        "x": 146.3,
+        "y": 137.478,
+        "width_ft": 54.34,
+        "depth_ft": 54.158
+      },
+      "palette": [],
+      "identity_tokens": [
+        "stone rim",
+        "long morning reflection"
+      ],
+      "notes": null
+    },
+    {
+      "key": "compost",
+      "asset_id": "loc-compost",
+      "name": "Compost corner",
+      "subtitle": "South fence",
+      "size_ft": null,
+      "source_dimensions": null,
+      "position_percent": {
+        "x": 8,
+        "y": 82,
+        "w": 16,
+        "h": 12
+      },
+      "position_ft": {
+        "x": 16.72,
+        "y": 170.806,
+        "width_ft": 33.44,
+        "depth_ft": 24.996
+      },
+      "palette": [],
+      "identity_tokens": [
+        "twin pits",
+        "neem shade"
+      ],
+      "notes": null
+    },
+    {
+      "key": "gate",
+      "asset_id": null,
+      "name": null,
+      "subtitle": null,
+      "size_ft": null,
+      "source_dimensions": null,
+      "position_percent": null,
+      "position_ft": null,
+      "palette": [],
+      "identity_tokens": [],
+      "notes": "Only canonical fact: \"Canonical parcel of red laterite soil in North Karnataka. Gated to the south-west; every layout measurement references this boundary.\" (see parcel.gate_side)."
+    }
+  ],
+  "identities": {
+    "farmer": {
+      "asset_id": "char-nanjunda",
+      "name": "Nanjunda",
+      "subtitle": "The farmer · our eyes and hands",
+      "height_m": 1.68,
+      "markings": "White cotton kurta, white panche, green cotton towel over left shoulder, simple leather sandals, short grey stubble.",
+      "identity_tokens": [
+        "white kurta",
+        "green shoulder towel",
+        "white panche",
+        "leather sandals",
+        "weathered hands",
+        "grey stubble"
+      ],
+      "notes": "POV rule: hands may enter frame naturally; face only in reflections or portraits."
+    },
+    "cow_ganga": {
+      "asset_id": "animal-ganga",
+      "name": "Ganga",
+      "subtitle": "Hallikar cow · eleven years on the acre",
+      "breed": "Hallikar",
+      "height_m": 1.35,
+      "length_m": 1.9,
+      "markings": "Smooth grey-white coat, darker shading across neck and hump, black muzzle, long lyre-shaped backward-curving horns, simple rope halter.",
+      "identity_tokens": [
+        "grey-white coat",
+        "lyre-shaped horns",
+        "rope halter",
+        "black muzzle",
+        "calm demeanor"
+      ],
+      "notes": "Never re-generate a new cow design — reuse identity tokens verbatim in prompts."
+    }
+  },
+  "missing": [
+    {
+      "path": "zones.pond.size_ft.width_ft",
+      "reason": "loc-pond dimensions are {\"diameterFt\":40} — no width_ft."
+    },
+    {
+      "path": "zones.pond.size_ft.depth_ft",
+      "reason": "loc-pond dimensions are {\"diameterFt\":40} — no depth_ft."
+    },
+    {
+      "path": "zones.compost.size_ft",
+      "reason": "loc-compost declares no dimensions."
+    },
+    {
+      "path": "zones.gate.asset_id",
+      "reason": "No canonical asset exists for the gate in the Asset Bible."
+    },
+    {
+      "path": "zones.gate.size_ft",
+      "reason": "No gate dimensions in the source."
+    },
+    {
+      "path": "zones.gate.position_percent",
+      "reason": "No farm-map position in the source."
+    }
+  ]
+}
