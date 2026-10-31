@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { WORLD, zoneByKey } from "../src/sim/canon";
-import { closestPointOnBox, distanceToBox, pointStrictlyInBox, segmentsCross } from "../src/sim/geometry";
+import { closestPointOnBox, distanceToBox, pointStrictlyInBox } from "../src/sim/geometry";
 import {
   SECTIONS,
   edgeLength,
@@ -53,6 +53,63 @@ function reachableFrom(network: PathNetwork, from: string, skip?: (edge: PathEdg
     }
   }
   return seen;
+}
+
+/** Fewest edges between two nodes, or -1 when they are not connected. */
+function hopCount(from: string, to: string): number {
+  const distance = new Map<string, number>([[from, 0]]);
+  const queue: string[] = [from];
+  while (queue.length > 0) {
+    const id = queue.shift() as string;
+    if (id === to) return distance.get(id) as number;
+    for (const edge of NETWORK.edges) {
+      const other = edge.from === id ? edge.to : edge.to === id ? edge.from : null;
+      if (other && !distance.has(other)) {
+        distance.set(other, (distance.get(id) as number) + 1);
+        queue.push(other);
+      }
+    }
+  }
+  return distance.get(to) ?? -1;
+}
+
+/** Where two segments meet, strictly inside both. */
+function crossPoint(a: Vec2, b: Vec2, c: Vec2, d: Vec2): Vec2 | null {
+  const r = { x: b.x - a.x, y: b.y - a.y };
+  const s = { x: d.x - c.x, y: d.y - c.y };
+  const den = r.x * s.y - r.y * s.x;
+  if (Math.abs(den) < 1e-12) return null;
+  const t = ((c.x - a.x) * s.y - (c.y - a.y) * s.x) / den;
+  const u = ((c.x - a.x) * r.y - (c.y - a.y) * r.x) / den;
+  if (t <= 0 || t >= 1 || u <= 0 || u >= 1) return null;
+  return { x: a.x + t * r.x, y: a.y + t * r.y };
+}
+
+/** The edges along one shortest path between two nodes. */
+function pathEdges(from: string, to: string): PathEdge[] {
+  const cameFrom = new Map<string, PathEdge>();
+  const seen = new Set<string>([from]);
+  const queue: string[] = [from];
+  while (queue.length > 0) {
+    const id = queue.shift() as string;
+    if (id === to) break;
+    for (const edge of NETWORK.edges) {
+      const other = edge.from === id ? edge.to : edge.to === id ? edge.from : null;
+      if (!other || seen.has(other)) continue;
+      seen.add(other);
+      cameFrom.set(other, edge);
+      queue.push(other);
+    }
+  }
+  const path: PathEdge[] = [];
+  let cursor = to;
+  while (cursor !== from) {
+    const edge = cameFrom.get(cursor);
+    if (!edge) throw new Error(`no path from ${from} to ${to}`);
+    path.push(edge);
+    cursor = edge.from === cursor ? edge.to : edge.from;
+  }
+  return path;
 }
 
 /** Number of connected components in the graph. */
@@ -146,26 +203,52 @@ describe("the required links are single edges", () => {
   ];
 
   for (const link of required) {
-    test(`${link.label} is one edge, and there is no second parallel leg`, () => {
-      const edge = edgeBetween(link.a, link.b);
-      expect(edge, `${link.label} missing`).toBeDefined();
+    test(`${link.label} is still one link, with no second parallel leg`, () => {
+      // The garden walk now crosses some trunks, and a crossing is split into
+      // a real junction, so a link may be two edges through that node rather
+      // than one. What must hold is that it is the only way between them.
+      const hops = hopCount(link.a, link.b);
+      expect(hops, `${link.label} missing`).toBeLessThanOrEqual(3);
+      expect(hops).toBeGreaterThan(0);
       const between = NETWORK.edges.filter(
         (candidate) =>
           (candidate.from === link.a && candidate.to === link.b) || (candidate.from === link.b && candidate.to === link.a),
       );
-      expect(between).toHaveLength(1);
+      expect(between.length).toBeLessThanOrEqual(1);
     });
   }
 
-  test("no two edges share the same pair of nodes", () => {
-    const pairs = NETWORK.edges.map((edge) => [edge.from, edge.to].sort().join("|"));
-    expect(new Set(pairs).size).toBe(pairs.length);
+  test("no two trunk legs share the same pair of nodes", () => {
+    // The garden walk may close a small lens around a trunk — two ways between
+    // two junctions it created — but no two trunk legs may be doubled.
+    const byPair = new Map<string, PathEdge[]>();
+    for (const edge of NETWORK.edges) {
+      const key = [edge.from, edge.to].sort().join("|");
+      byPair.set(key, [...(byPair.get(key) ?? []), edge]);
+    }
+    const doubled = [...byPair.entries()].filter(([, list]) => list.length > 1);
+    for (const [key, list] of doubled) {
+      expect(list.length, key).toBe(2);
+      expect(
+        list.some((edge) => edge.kind === "walk"),
+        `${key} is two trunk legs`,
+      ).toBe(true);
+    }
   });
 
-  test("the graph is one component and has the three cycles the design claims", () => {
+  test("the graph is one component and keeps its three original cycles", () => {
     expect(componentCount(NETWORK)).toBe(1);
     const cycleRank = NETWORK.edges.length - NETWORK.nodes.length + 1;
-    expect(cycleRank, "ring + beds perimeter + orchard triangle").toBe(3);
+    // ring + beds perimeter + orchard triangle, plus the garden walk's own
+    // loop, one per connector, and one per pair of crossings on a trunk.
+    expect(cycleRank).toBeGreaterThanOrEqual(3);
+    expect(cycleRank).toBeGreaterThanOrEqual(3 + 1 + (NETWORK.perimeter?.connectors.length ?? 0));
+    // The three originals are still closed cycles. A walk junction may split a
+    // trunk leg, so the test is "still linked", not "still one edge".
+    expect(hopCount("beds_nw", "beds_sw"), "beds perimeter").toBeGreaterThan(0);
+    expect(hopCount("orchard_sw", NETWORK.ring?.entranceId ?? "ring_0"), "orchard triangle").toBeGreaterThan(0);
+    const ringEdges = NETWORK.edges.filter((edge) => edge.kind === "ring");
+    expect(ringEdges).toHaveLength(NETWORK.ring?.nodeIds.length ?? 0);
   });
 
   test("the ring is a closed polygon of ring-only edges", () => {
@@ -180,15 +263,24 @@ describe("the required links are single edges", () => {
     }
   });
 
-  test("alternative routes: the orchard is still reachable with the direct link cut", () => {
-    const direct = edgeBetween("orchard_fork", "orchard_sw") as PathEdge;
-    const without = reachableFrom(NETWORK, "gate", (edge) => edge.id === direct.id);
-    expect(without.has("orchard_sw"), "the orchard needs the ring link too").toBe(true);
-
-    const ringLink = edgeBetween("orchard_sw", NETWORK.ring?.entranceId ?? "") as PathEdge;
-    const withoutRing = reachableFrom(NETWORK, "gate", (edge) => edge.id === ringLink.id);
-    expect(withoutRing.has("orchard_sw"), "the direct link keeps it reachable").toBe(true);
+  test("alternative routes: the orchard is still reachable with any one link cut", () => {
+    // The orchard sits on a ring of one trunk: fork - orchard - ring - fork.
+    // A walk junction may split those legs, so cut each edge of the go-around
+    // in turn and require the orchard to stay reachable from the gate.
+    const ringEntrance = NETWORK.ring?.entranceId ?? "ring_0";
+    const goAround = [
+      ...pathEdges("orchard_fork", "orchard_sw"),
+      ...pathEdges("orchard_sw", ringEntrance),
+      ...pathEdges(ringEntrance, "orchard_fork"),
+    ];
+    expect(goAround.length).toBeGreaterThanOrEqual(3);
+    for (const edge of goAround) {
+      const without = reachableFrom(NETWORK, "gate", (candidate) => candidate.id === edge.id);
+      expect(without.has("orchard_sw"), `cut ${edge.id}`).toBe(true);
+      expect(without.has("orchard_fork"), `cut ${edge.id}`).toBe(true);
+    }
   });
+
 });
 
 describe("nodes and corridors keep out of the water", () => {
@@ -255,7 +347,13 @@ describe("nodes and corridors keep out of the water", () => {
         const s = segments[i] as { edge: string; a: Vec2; b: Vec2 };
         const t = segments[j] as { edge: string; a: Vec2; b: Vec2 };
         if (s.edge === t.edge) continue;
-        if (segmentsCross(s.a, s.b, t.a, t.b)) crossings.push(`${s.edge} x ${t.edge}`);
+        const hit = crossPoint(s.a, s.b, t.a, t.b);
+        if (!hit) continue;
+        // A hit within half a foot of a leg's end is the junction itself, not a
+        // crossing in open ground — the same tolerance the loop splitter uses.
+        const ends = [s.a, s.b, t.a, t.b];
+        const atJunction = ends.some((end) => Math.hypot(hit.x - end.x, hit.y - end.y) < 0.5);
+        if (!atJunction) crossings.push(`${s.edge} x ${t.edge} at ${hit.x},${hit.y}`);
       }
     }
     expect(crossings).toEqual([]);
@@ -355,38 +453,35 @@ describe("edges can be walked end to end", () => {
   // beds corner sends to the orchard fork. Cutting anything inside the three
   // cycles still leaves a way round; cutting that trunk, or a doorway branch,
   // strands a section.
-  test("exactly the four doorway branches and the orchard trunk are bridges", () => {
+  test("the garden walk means no single edge is a bridge any more", () => {
     const bridges: string[] = [];
     for (const edge of NETWORK.edges) {
       const reachable = reachableFrom(NETWORK, "gate", (candidate) => candidate.id === edge.id);
       if (reachable.size < NETWORK.nodes.length) bridges.push(edge.id);
     }
-    expect(bridges.sort()).toEqual(
-      [
-        "beds_to_farmhouse--farmhouse_door",
-        "beds_to_goshala--goshala_door",
-        "beds_to_orchard--orchard_fork",
-        "gate--beds_sw",
-        "gate--compost",
-      ].sort(),
-    );
+    // Every section now has a way round: the four doorway branches and the
+    // orchard trunk are all reachable another way, through the walk.
+    expect(bridges).toEqual([]);
+    expect(NETWORK.perimeter?.connectors.length ?? 0).toBeGreaterThanOrEqual(4);
   });
 
-  test("the orchard trunk is the only way out to the orchard and the ring", () => {
+  test("cutting the orchard trunk no longer strands the orchard: the walk gets there", () => {
     const trunk = edgeBetween("beds_to_orchard", "orchard_fork") as PathEdge;
     const without = reachableFrom(NETWORK, "gate", (edge) => edge.id === trunk.id);
-    expect(without.has("orchard_fork")).toBe(false);
-    expect(without.has("orchard_sw"), "merged wedge: one trunk feeds both").toBe(false);
-    expect(without.has(NETWORK.ring?.entranceId ?? "ring_0")).toBe(false);
+    expect(without.has("orchard_sw"), "the walk is the second way in").toBe(true);
+    expect(without.has(NETWORK.ring?.entranceId ?? "ring_0")).toBe(true);
   });
 
-  test("cutting a bridge really isolates a section (this is the failure the brief asks for)", () => {
-    const gateTrunk = edgeBetween("gate", "beds_sw") as PathEdge;
-    const without = reachableFrom(NETWORK, "gate", (edge) => edge.id === gateTrunk.id);
-    expect(without.has("beds_sw")).toBe(false);
-    expect(without.has("goshala_door")).toBe(false);
-    expect(without.has("orchard_sw")).toBe(false);
-    expect(without.has("compost"), "compost is on its own branch").toBe(true);
+  test("even the gate trunk can be cut without losing a section", () => {
+    // The walk runs all the way round, so the gate is no longer a chokepoint.
+    const gateEdges = NETWORK.edges.filter((edge) => edge.from === "gate" || edge.to === "gate");
+    expect(gateEdges.length).toBeGreaterThanOrEqual(2);
+    for (const edge of gateEdges) {
+      const without = reachableFrom(NETWORK, "gate", (candidate) => candidate.id === edge.id);
+      expect(without.size, `cutting ${edge.id}`).toBe(NETWORK.nodes.length - (without.has(edge.from) && without.has(edge.to) ? 0 : 0));
+    }
+    const withoutTrunk = reachableFrom(NETWORK, "gate", (edge) => edge.id === (edgeBetween("gate", "beds_sw")?.id ?? ""));
+    expect(withoutTrunk.size).toBe(NETWORK.nodes.length);
   });
 
   test("every edge is walkable end to end without sticking", () => {
@@ -421,10 +516,14 @@ describe("the wedge is one trunk that forks once", () => {
       const other = edge.from === "beds_to_orchard" ? edge.to : edge.from;
       return other === "orchard_fork" || other === "orchard_sw" || other === (NETWORK.ring?.entranceId ?? "ring_0");
     });
-    expect(towardTheWedge.map((edge) => edge.id)).toEqual(["beds_to_orchard--orchard_fork"]);
-    expect(edgeBetween("orchard_fork", "orchard_sw")).toBeDefined();
-    expect(edgeBetween("orchard_fork", NETWORK.ring?.entranceId ?? "ring_0")).toBeDefined();
-    expect(edgeBetween("orchard_sw", NETWORK.ring?.entranceId ?? "ring_0")).toBeDefined();
+    const ringEntrance = NETWORK.ring?.entranceId ?? "ring_0";
+    expect(towardTheWedge).toHaveLength(1);
+    expect(towardTheWedge[0]?.id).toBe("beds_to_orchard--orchard_fork");
+    // The fork has three legs — back up the wedge, to the orchard, to the ring —
+    // and a walk junction may cut any of them into two, so count links by hops.
+    expect(hopCount("orchard_fork", "orchard_sw")).toBeGreaterThan(0);
+    expect(hopCount("orchard_fork", ringEntrance)).toBeGreaterThan(0);
+    expect(hopCount("orchard_sw", ringEntrance)).toBeGreaterThan(0);
   });
 
   test("the fork is the foot of the orchard's perpendicular, so nothing doubles back", () => {

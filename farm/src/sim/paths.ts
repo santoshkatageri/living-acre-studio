@@ -1,4 +1,5 @@
 import { closestPointOnBox, distance } from "./geometry";
+import { buildPerimeter, joinWalkCrossings, type Perimeter } from "./perimeter";
 import { createRng } from "./rng";
 import type { Vec2, World, Zone } from "./types";
 
@@ -14,7 +15,7 @@ import type { Vec2, World, Zone } from "./types";
     here is hand-placed, and no trunk enters a solid zone — the two solid
     entrances (the farmhouse door) end exactly on the wall. */
 
-export type NodeRole = "entrance" | "meet" | "corner" | "ring";
+export type NodeRole = "entrance" | "meet" | "corner" | "ring" | "walk";
 
 export interface PathNode {
   id: string;
@@ -31,7 +32,7 @@ export interface PathEdge {
   to: string;
   /** Drawn and walkable width. The ring is narrower than the trunks. */
   widthFt: number;
-  kind: "trunk" | "ring";
+  kind: "trunk" | "ring" | "walk";
   /** Densely sampled centreline; first point at `from`, last at `to`. */
   points: Vec2[];
 }
@@ -65,6 +66,8 @@ export interface PathNetwork {
   edges: PathEdge[];
   junctions: PathNode[];
   ring: PondRing | null;
+  /** The garden walk and its spurs, when it is enabled. */
+  perimeter: Perimeter | null;
   steppingStones: SteppingStone[];
   entrances: SectionEntrance[];
 }
@@ -368,6 +371,25 @@ export function buildPathNetwork(world: World): PathNetwork {
   trunk("beds_to_farmhouse", "beds_nw");
   trunk("beds_nw", "beds_sw");
 
+  /* ---- the garden walk: a closed loop inside the belt, joined by spurs ----
+     Built after the rest of the network so its connectors can find the
+     entrance nodes they join. */
+  const perimeter = buildPerimeter(world, { nodes, edges });
+  if (perimeter) {
+    for (const node of perimeter.nodes) add(node);
+    for (const edge of perimeter.edges) {
+      const key = [edge.from, edge.to].sort().join("|");
+      if (seen.has(key)) throw new Error(`paths: duplicate edge between ${edge.from} and ${edge.to}`);
+      seen.add(key);
+      edges.push(edge);
+    }
+    // Every place the walk crosses a leg becomes a real junction: both edges
+    // are split there, so the crossing is walkable and not just drawn.
+    perimeter.junctions = joinWalkCrossings(nodes, edges);
+    seen.clear();
+    for (const edge of edges) seen.add([edge.from, edge.to].sort().join("|"));
+  }
+
   /* ---- seams: what is left of a chain that never doubles back ---- */
   const degree = new Map<string, number>();
   for (const edge of edges) {
@@ -393,7 +415,7 @@ export function buildPathNetwork(world: World): PathNetwork {
     }
   }
 
-  return { nodes, edges, junctions, ring, steppingStones, entrances: entranceRecords };
+  return { nodes, edges, junctions, ring, perimeter, steppingStones, entrances: entranceRecords };
 }
 
 /** Evenly spaced stones with seeded sideways jitter. */

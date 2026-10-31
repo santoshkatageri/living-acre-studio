@@ -7,6 +7,7 @@ import type { PlotGrid } from "../sim/plot";
 import { createFarmer, type Actor } from "./actor";
 import { applyAspect, applyZoom, createIsometricCamera, focusCamera } from "./camera";
 import { createZoneLabels, type ZoneLabels } from "./labels";
+import { createBelt, type BeltView } from "./belt";
 import { createPaths, type PathsView } from "./paths";
 import { createPlotView, type PlotView } from "./plots";
 import { createPond, type PondView } from "./pond";
@@ -28,6 +29,7 @@ export interface View {
   water: WaterEffect;
   pond: PondView;
   paths: PathsView;
+  belt: BeltView;
   /** The same grid A* and the overlay use, built once here. */
   walkable: WalkableGrid;
   setFocus(xFt: number, yFt: number): void;
@@ -107,6 +109,9 @@ export function createView(
   const paths = createPaths(world, walkable);
   scene.add(paths.group);
 
+  const belt = createBelt(world, networkFor(world));
+  scene.add(belt.group);
+
   const plot = createPlotView(plotGrid, plotBaseY, world.beds);
   plot.sync(plotGrid);
   scene.add(plot.group);
@@ -158,6 +163,7 @@ export function createView(
     water,
     pond,
     paths,
+    belt,
     walkable,
     setFocus(xFt, yFt) {
       focusX = xFt;
@@ -191,6 +197,7 @@ export function createView(
     },
     dispose() {
       labels.dispose();
+      belt.dispose();
       plot.dispose();
       pond.dispose();
       paths.dispose();

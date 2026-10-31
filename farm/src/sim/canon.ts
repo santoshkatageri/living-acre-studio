@@ -87,6 +87,30 @@ interface OverridesFile {
       height_ft: [number, number];
       canopy_ft: [number, number];
     };
+    buffer_zone: {
+      enabled: boolean;
+      belt_width_ft: number;
+      per_side_width_ft: Record<string, number>;
+      tree_spacing_ft: number;
+      rows: number;
+      jitter_ft: number;
+      seed: number;
+      gate_gap_ft: number;
+      path_clearance_ft: number;
+      zone_clearance_ft: number;
+      canopy_top_limit_ft: number;
+      species: { id: string; weight: number; height_ft: [number, number]; canopy_ft: [number, number]; label: string | null }[];
+    };
+    perimeter_walk: {
+      enabled: boolean;
+      width_ft: number;
+      offset_from_belt_inner_edge_ft: number;
+      corner_radius_ft: number;
+      connectors: string[];
+      max_connectors: number;
+      node_spacing_ft: number;
+      clearance_ft: number;
+    };
     lighting: {
       default_preset: string;
       shadow_extent_ft: number;
@@ -338,6 +362,40 @@ export function createWorld(): World {
       jitterFt: overrides.overrides.orchard_look.jitter_ft,
       heightFt: overrides.overrides.orchard_look.height_ft,
       canopyFt: overrides.overrides.orchard_look.canopy_ft,
+    },
+    buffer: {
+      enabled: overrides.overrides.buffer_zone.enabled,
+      widthFt: {
+        west: overrides.overrides.buffer_zone.per_side_width_ft["west"] ?? overrides.overrides.buffer_zone.belt_width_ft,
+        north: overrides.overrides.buffer_zone.per_side_width_ft["north"] ?? overrides.overrides.buffer_zone.belt_width_ft,
+        east: overrides.overrides.buffer_zone.per_side_width_ft["east"] ?? overrides.overrides.buffer_zone.belt_width_ft,
+        south: overrides.overrides.buffer_zone.per_side_width_ft["south"] ?? overrides.overrides.buffer_zone.belt_width_ft,
+      },
+      spacingFt: overrides.overrides.buffer_zone.tree_spacing_ft,
+      rows: overrides.overrides.buffer_zone.rows,
+      jitterFt: overrides.overrides.buffer_zone.jitter_ft,
+      seed: overrides.overrides.buffer_zone.seed,
+      gateGapFt: overrides.overrides.buffer_zone.gate_gap_ft,
+      pathClearanceFt: overrides.overrides.buffer_zone.path_clearance_ft,
+      zoneClearanceFt: overrides.overrides.buffer_zone.zone_clearance_ft,
+      canopyTopLimitFt: overrides.overrides.buffer_zone.canopy_top_limit_ft,
+      species: overrides.overrides.buffer_zone.species.map((species) => ({
+        id: species.id,
+        weight: species.weight,
+        heightFt: species.height_ft,
+        canopyFt: species.canopy_ft,
+        label: species.label,
+      })),
+    },
+    perimeter: {
+      enabled: overrides.overrides.perimeter_walk.enabled,
+      widthFt: overrides.overrides.perimeter_walk.width_ft,
+      offsetFt: overrides.overrides.perimeter_walk.offset_from_belt_inner_edge_ft,
+      cornerRadiusFt: overrides.overrides.perimeter_walk.corner_radius_ft,
+      connectors: [...overrides.overrides.perimeter_walk.connectors],
+      maxConnectors: overrides.overrides.perimeter_walk.max_connectors,
+      nodeSpacingFt: overrides.overrides.perimeter_walk.node_spacing_ft,
+      clearanceFt: overrides.overrides.perimeter_walk.clearance_ft,
     },
     lighting: {
       defaultPreset: overrides.overrides.lighting.default_preset,

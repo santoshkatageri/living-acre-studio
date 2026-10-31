@@ -23,6 +23,7 @@ export interface PathsView {
 const PATH_Y = 0.045;
 const CAP_LIFT = 0.012;
 const OVERLAY_Y = 0.07;
+const EDGE_Y = 0.035;
 
 function pushDisc(
   positions: number[],
@@ -41,6 +42,40 @@ function pushDisc(
   for (let i = 0; i < segments; i += 1) {
     indices.push(base, base + 1 + i, base + 1 + ((i + 1) % segments));
   }
+}
+
+/** A lighter, slightly wider strip under the garden walk only. */
+function walkEdgeGeometry(network: PathNetwork, extraFt: number): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const indices: number[] = [];
+  let base = 0;
+  for (const edge of network.edges) {
+    if (edge.kind !== "walk") continue;
+    const half = edge.widthFt / 2 + extraFt;
+    const points = edge.points;
+    for (let i = 0; i < points.length; i += 1) {
+      const point = points[i] as Vec2;
+      const previous = points[Math.max(0, i - 1)] as Vec2;
+      const next = points[Math.min(points.length - 1, i + 1)] as Vec2;
+      const dx = next.x - previous.x;
+      const dy = next.y - previous.y;
+      const length = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / length) * half;
+      const ny = (dx / length) * half;
+      positions.push(point.x + nx, EDGE_Y, point.y + ny);
+      positions.push(point.x - nx, EDGE_Y, point.y - ny);
+    }
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const a = base + i * 2;
+      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+    base += points.length * 2;
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 function ribbonGeometry(network: PathNetwork): THREE.BufferGeometry {
@@ -139,6 +174,23 @@ export function createPaths(world: World, grid?: WalkableGrid): PathsView {
   );
   trail.name = "paths:trail";
   group.add(trail);
+
+  // The garden walk reads differently: a lighter, wider strip under it.
+  if (network.edges.some((edge) => edge.kind === "walk")) {
+    const edgeStrip = new THREE.Mesh(
+      walkEdgeGeometry(network, 0.9),
+      new THREE.MeshStandardMaterial({
+        color: new THREE.Color(world.palette["cream"] ?? "#f1ead9").multiplyScalar(0.55),
+        roughness: 1,
+        metalness: 0,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+      }),
+    );
+    edgeStrip.name = "paths:walk-edge";
+    group.add(edgeStrip);
+  }
 
   if (network.steppingStones.length > 0) {
     const geometry = new THREE.CylinderGeometry(0.5, 0.55, 0.12, 7);

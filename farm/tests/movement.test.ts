@@ -14,9 +14,9 @@ describe("off-path ground is blocked", () => {
   const offPath: { label: string; point: Vec2 }[] = [
     { label: "open field between the beds and the pond", point: { x: 120, y: 165 } },
     { label: "open ground north of the goshala", point: { x: 80, y: 6 } },
-    { label: "the yard west of the beds", point: { x: 18, y: 100 } },
+    { label: "the yard west of the beds", point: { x: 24.5, y: 62.5 } },
     { label: "open ground between the beds and the orchard", point: { x: 115, y: 85 } },
-    { label: "the strip east of the orchard", point: { x: 200, y: 120 } },
+    { label: "the strip east of the orchard", point: { x: 150.5, y: 30.5 } },
     { label: "open ground west of the gate track", point: { x: 6, y: 155 } },
   ];
 

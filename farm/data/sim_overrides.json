@@ -218,6 +218,73 @@
           "note": "PLACEHOLDER — warm sun low from the west, cooler fill."
         }
       }
+    },
+    "buffer_zone": {
+      "enabled": true,
+      "belt_width_ft": 14,
+      "per_side_width_ft": {
+        "west": 12,
+        "north": 12,
+        "east": 5,
+        "south": 14
+      },
+      "tree_spacing_ft": 9,
+      "rows": 2,
+      "jitter_ft": 2.0,
+      "seed": 20261101,
+      "gate_gap_ft": 10,
+      "path_clearance_ft": 3,
+      "zone_clearance_ft": 1,
+      "canopy_top_limit_ft": 34,
+      "species": [
+        {
+          "id": "round_canopy",
+          "weight": 3,
+          "height_ft": [
+            18,
+            28
+          ],
+          "canopy_ft": [
+            10,
+            16
+          ],
+          "label": null,
+          "note": "PLACEHOLDER — a shape, not a species. No real tree name is used."
+        },
+        {
+          "id": "tall_slender",
+          "weight": 1,
+          "height_ft": [
+            26,
+            40
+          ],
+          "canopy_ft": [
+            6,
+            9
+          ],
+          "label": null,
+          "note": "PLACEHOLDER — a shape, not a species. No real tree name is used."
+        }
+      ],
+      "note": "PLACEHOLDER — the belt is a visual edge, decorative only, with no collision. per_side_width_ft is the fit-check answer: the farmhouse is 12.50 ft from the north boundary and 12.54 ft from the west, and the pond ring's outer edge reaches 5.93 ft from the east, so a flat 14 ft belt could not clear them. Species are named by shape only; no real tree species is named anywhere."
+    },
+    "perimeter_walk": {
+      "enabled": true,
+      "width_ft": 5,
+      "offset_from_belt_inner_edge_ft": 2,
+      "corner_radius_ft": 12,
+      "connectors": [
+        "gate",
+        "compost",
+        "goshala",
+        "farmhouse",
+        "orchard",
+        "pond_ring"
+      ],
+      "max_connectors": 6,
+      "node_spacing_ft": 4,
+      "clearance_ft": 2,
+      "note": "PLACEHOLDER — the garden walk. Its centreline is (belt inner edge + offset + width/2) in from the boundary, with notches around the two buildings and around the pond ring, because a plain rounded rectangle collides with all three."
     }
   }
 }

@@ -122,9 +122,11 @@ describe("clicks route, snap or refuse", () => {
 
 describe("the HUD knows when you are on a path", () => {
   test("standing on the gate-to-beds trunk is a path, not open ground", () => {
-    const edge = NETWORK.edges.find((entry) => entry.id === "gate--beds_sw");
-    expect(edge).toBeDefined();
-    const midpoint = edge?.points[Math.floor((edge.points.length - 1) / 2)] as { x: number; y: number };
+    // The trunk is split where the garden walk crosses it, so the midpoint is
+    // taken from the two entrance nodes rather than from one edge id.
+    const gate = NETWORK.nodes.find((node) => node.id === "gate") as { x: number; y: number };
+    const beds = NETWORK.nodes.find((node) => node.id === "beds_sw") as { x: number; y: number };
+    const midpoint = { x: (gate.x + beds.x) / 2, y: (gate.y + beds.y) / 2 };
     expect(zoneAt(WORLD, midpoint)).toBeNull();
     expect(placeAt(WORLD, midpoint, NETWORK).kind).toBe("path");
   });

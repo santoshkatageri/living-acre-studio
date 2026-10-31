@@ -66,6 +66,19 @@ export interface DoorSpec {
 
 export type MovementMode = "free" | "paths_only";
 
+/** The four sides of the parcel, in the order the belt is walked. */
+export type ParcelSide = "west" | "north" | "east" | "south";
+
+/** One belt species. A SHAPE, not a botanical name. */
+export interface BeltSpecies {
+  id: string;
+  weight: number;
+  heightFt: [number, number];
+  canopyFt: [number, number];
+  /** Optional human label; null unless the data names one (then needs_review). */
+  label: string | null;
+}
+
 /** Lighting preset. Every value is data; nothing is tinted in code. */
 export interface LightPreset {
   sky: string;
@@ -120,6 +133,31 @@ export interface World {
     jitterFt: number;
     heightFt: [number, number];
     canopyFt: [number, number];
+  };
+  /** The decorative tree belt just inside the boundary. No collision. */
+  buffer: {
+    enabled: boolean;
+    widthFt: Record<ParcelSide, number>;
+    spacingFt: number;
+    rows: number;
+    jitterFt: number;
+    seed: number;
+    gateGapFt: number;
+    pathClearanceFt: number;
+    zoneClearanceFt: number;
+    canopyTopLimitFt: number;
+    species: BeltSpecies[];
+  };
+  /** The garden walk: a closed loop joined to the path network. */
+  perimeter: {
+    enabled: boolean;
+    widthFt: number;
+    offsetFt: number;
+    cornerRadiusFt: number;
+    connectors: string[];
+    maxConnectors: number;
+    nodeSpacingFt: number;
+    clearanceFt: number;
   };
   lighting: {
     defaultPreset: string;
