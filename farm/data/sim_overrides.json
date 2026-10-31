@@ -78,8 +78,8 @@
       "zone": "vegetable_beds",
       "rows": 5,
       "cols": 5,
-      "cell_ft": 10,
-      "note": "The storyboard's 5 x 5 bed, centred in the canon vegetable_beds zone."
+      "cell_ft": 4,
+      "note": "The storyboard's 5 x 5 bed, centred in the canon vegetable_beds zone. cell_ft is the brief's 4 ft per cell, read here and never hard-coded in src/sim."
     },
     "water": {
       "capacity": 24,

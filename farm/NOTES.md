@@ -50,6 +50,16 @@ Three cycles: the pond ring, the beds perimeter, and the orchard triangle
 gate–beds, beds–goshala, beds–farmhouse. Cutting the beds trunk splits the
 map away from the gate — the failing-test proof below.
 
+**The bed.** 5 x 5 cells of **4 ft** (`plot.cell_ft` in
+`data/sim_overrides.json`, default 4 ft), so the planted block is 20 x 20 ft,
+centred in the canon 80 x 70 ft `vegetable_beds`. The size lives in data: no
+literal 4 appears in `src/sim` or `src/render`.
+
+**The tank.** `water.capacity` is 24 in `data/sim_overrides.json`, and the HUD
+prints `tank.level / tank.capacity` — the only source. Mounting the real HUD
+against a stub DOM prints `"24 / 24"`; the same HUD handed a world configured
+for 10 prints `"10 / 10"`, so the number is read, not written into the UI.
+
 **Routes from the gate** (A*, 1 ft grid), against the straight line:
 
 | section | route | straight | ratio |

@@ -25,11 +25,15 @@ function fresh(): PlotGrid {
 }
 
 describe("the plot grid", () => {
-  test("fits inside the canon beds and is 5 x 5 of 10 ft cells", () => {
+  test("fits inside the canon beds: 5 x 5 cells of the configured 4 ft", () => {
     const grid = fresh();
     expect(grid.rows).toBe(WORLD.plot.rows);
     expect(grid.cols).toBe(WORLD.plot.cols);
     expect(grid.cellFt).toBe(WORLD.plot.cellFt);
+    // The brief fixes 4 ft per cell; it comes from data/sim_overrides.json.
+    expect(grid.cellFt).toBe(4);
+    expect(grid.cols * grid.cellFt).toBe(20);
+    expect(grid.rows * grid.cellFt).toBe(20);
     expect(grid.cells).toHaveLength(grid.rows * grid.cols);
     expect(grid.origin.x).toBeGreaterThanOrEqual(beds.box.x);
     expect(grid.origin.x + grid.cols * grid.cellFt).toBeLessThanOrEqual(beds.box.x + beds.box.widthFt);
