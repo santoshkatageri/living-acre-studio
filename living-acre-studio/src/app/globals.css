@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #12100e;
+  --color-soil: #171310;
+  --color-panel: #1d1813;
+  --color-raise: #241d15;
+  --color-line: #332a20;
+  --color-linebright: #4a3d2c;
+  --color-cream: #f1ead9;
+  --color-straw: #cfc4ab;
+  --color-muted: #9c8f78;
+  --color-faint: #6f6454;
+  --color-amber: #e8a33d;
+  --color-ember: #c96a45;
+  --color-leaf: #8fae6a;
+  --color-moss: #5b7c4a;
+  --color-sky: #7ba3b5;
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+:root {
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1100px 520px at 85% -10%, rgba(232, 163, 61, 0.055), transparent 60%),
+    radial-gradient(900px 480px at -10% 110%, rgba(91, 124, 74, 0.05), transparent 55%),
+    var(--color-ink);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3a3025 transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #342b20;
+  border-radius: 8px;
+  border: 2px solid #12100e;
+}
+::selection {
+  background: rgba(232, 163, 61, 0.28);
+  color: #fff8ec;
+}
+
+.font-display {
+  font-family: var(--font-display), "Georgia", serif;
+}
+.font-sans {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--noise);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.55;
+  z-index: 1;
+}
+
+.card-surface {
+  background: linear-gradient(180deg, rgba(36, 29, 21, 0.72), rgba(29, 24, 19, 0.92));
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+}
+.card-surface:hover {
+  border-color: var(--color-linebright);
+}
+
+.eyebrow {
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.hairline {
+  border-color: var(--color-line);
+}
+
+.sunrise-band {
+  background:
+    radial-gradient(120% 140% at 15% 110%, rgba(201, 106, 69, 0.34), transparent 50%),
+    radial-gradient(120% 160% at 85% 115%, rgba(232, 163, 61, 0.3), transparent 55%),
+    linear-gradient(180deg, rgba(18, 16, 14, 0.1), rgba(18, 16, 14, 0.86));
+}
+
+.video-frame {
+  background: #0c0a08;
+  border: 1px solid var(--color-line);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 24px 70px -30px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes dotpulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+.dot-pulse {
+  animation: dotpulse 1.2s ease-in-out infinite;
+}
+
+@keyframes risein {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise-in {
+  animation: risein 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes sweepglow {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.stage-running {
+  background: linear-gradient(100deg, rgba(232, 163, 61, 0.06) 30%, rgba(232, 163, 61, 0.2) 50%, rgba(232, 163, 61, 0.06) 70%);
+  background-size: 200% 100%;
+  animation: sweepglow 1.8s linear infinite;
+}
+
+a, button {
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.btn-primary {
+  background: var(--color-amber);
+  color: #1c1405;
+  font-weight: 700;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #f2b054;
+  box-shadow: 0 8px 28px -10px rgba(232, 163, 61, 0.55);
+}
+.btn-ghost {
+  border: 1px solid var(--color-linebright);
+  color: var(--color-straw);
+}
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--color-amber);
+  color: var(--color-cream);
+  background: rgba(232, 163, 61, 0.07);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
