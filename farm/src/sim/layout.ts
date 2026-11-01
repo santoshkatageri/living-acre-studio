@@ -1,6 +1,4 @@
-import layoutJson from "../../data/farm-layout-v2.json";
 import layoutSchema from "../../data/schema/farm-layout-v2.schema.json";
-import orchardJson from "../../data/orchard-5layer.json";
 import orchardSchema from "../../data/schema/orchard-5layer.schema.json";
 
 import { validateSchema, type SchemaNode, type SchemaViolation } from "./json-schema";
@@ -84,6 +82,10 @@ export interface LayoutGate {
 
 export interface FarmLayout {
   schemaVersion: string;
+  /** What this revision replaced, if it is a patch of an earlier draft. */
+  supersedes: { schemaVersion: string; sha256: string; note: string } | null;
+  /** Every value this revision changed, with the reason. */
+  changes: { id: string; field: string; from: number | string; to: number | string; why: string }[];
   parcel: { sideM: number; sideFt: number; areaM2: number; gate: LayoutGate };
   belt: { widthM: number; note: string };
   zones: LayoutZone[];
@@ -190,6 +192,8 @@ interface RawZone {
 
 interface RawLayout {
   schema_version: string;
+  supersedes?: { schema_version: string; sha256: string; note: string };
+  changes?: { id: string; field: string; from: number | string; to: number | string; why: string }[];
   parcel: { side_m: number; side_ft: number; area_m2: number; gate: { side: LayoutGate["side"]; x_m: number; y_m: number; gap_m: number } };
   belt: { width_m: number; note: string };
   zones: RawZone[];
@@ -288,6 +292,20 @@ export function layoutViolations(raw: unknown): Violation[] {
     }
   }
 
+  // 6a. a channel must not run through a zone (that is a ditch through a shed)
+  for (const channel of layout.channels) {
+    const box = { x: channel.x_m, y: channel.y_m, w: channel.w_m, d: channel.d_m };
+    for (const zone of layout.zones) {
+      const area = overlapAreaM(box, zoneBox(zone));
+      if (area > 1e-9) {
+        add(
+          "channel.zone_overlap",
+          `channel "${channel.id}" runs through zone "${zone.id}" (${round3(area)} m2)`,
+        );
+      }
+    }
+  }
+
   // 6. the four crop plots are 22 x 24 m
   const plots = layout.zones.filter((zone) => zone.kind === "crop_plot");
   for (const plot of plots) {
@@ -316,6 +334,26 @@ export function layoutViolations(raw: unknown): Violation[] {
   }
 
   return violations;
+}
+
+export interface ChannelPathOverlap {
+  channel: string;
+  path: string;
+  areaM2: number;
+}
+
+/*  A channel crossing a gravel path is normal — the path is bridged or the ditch
+    is culverted — so it is not an error. It is listed in the report instead, so
+    the builder knows where the crossings are. */
+export function channelPathOverlaps(layout: FarmLayout): ChannelPathOverlap[] {
+  const overlaps: ChannelPathOverlap[] = [];
+  for (const channel of layout.channels) {
+    for (const path of layout.paths) {
+      const area = overlapAreaM(channel.boxM, path.boxM);
+      if (area > 1e-9) overlaps.push({ channel: channel.id, path: path.id, areaM2: round3(area) });
+    }
+  }
+  return overlaps;
 }
 
 /** Orchard-file cross-checks against the layout it belongs to. */
@@ -398,6 +436,16 @@ export function toLayout(raw: unknown): FarmLayout {
   const source = raw as RawLayout;
   return {
     schemaVersion: source.schema_version,
+    supersedes: source.supersedes
+      ? { schemaVersion: source.supersedes.schema_version, sha256: source.supersedes.sha256, note: source.supersedes.note }
+      : null,
+    changes: (source.changes ?? []).map((change) => ({
+      id: change.id,
+      field: change.field,
+      from: change.from,
+      to: change.to,
+      why: change.why,
+    })),
     parcel: {
       sideM: source.parcel.side_m,
       sideFt: source.parcel.side_ft,
@@ -499,14 +547,6 @@ export function readOrchard(raw: unknown, layout: FarmLayout): OrchardData {
   };
 }
 
-/*  Built at import time, so a broken layout fails the build rather than the
-    render. Keyed by the world switch in sim_overrides.json — but the acre
-    world is still the one the app renders until step 3. */
-export const LAYOUT: FarmLayout = readLayout(layoutJson);
-export const ORCHARD_LAYERS: OrchardData = readOrchard(orchardJson, LAYOUT);
-
-export const layoutZone = (id: string): LayoutZone => {
-  const zone = LAYOUT.zones.find((entry) => entry.id === id);
-  if (!zone) throw new Error(`the hectare layout has no zone "${id}"`);
-  return zone;
-};
+/*  The validated singletons live in hectare.ts, which imports the data. This
+    module stays free of the data files so the validator can run against a
+    deliberately broken copy without the broken copy throwing on import. */

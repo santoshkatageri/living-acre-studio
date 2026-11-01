@@ -6,11 +6,11 @@ import orchardJson from "../data/orchard-5layer.json";
 import orchardSchema from "../data/schema/orchard-5layer.schema.json";
 import { WORLD_ID, WORLD_IDS, parseWorldId } from "../src/sim/canon";
 import { unsupportedKeywords, validateSchema, type SchemaNode } from "../src/sim/json-schema";
+import { LAYOUT, ORCHARD_LAYERS } from "../src/sim/hectare";
 import {
   FT_PER_M,
   INTERIOR_M,
-  LAYOUT,
-  ORCHARD_LAYERS,
+  channelPathOverlaps,
   layoutViolations,
   orchardViolations,
   readLayout,
@@ -128,6 +128,62 @@ describe("the saved files validate", () => {
   });
 });
 
+describe("channels: through a zone is an error, under a path is listed", () => {
+  test("no channel runs through a zone in the saved file", () => {
+    expect(checksOf(layoutViolations(layoutJson)).filter((check) => check === "channel.zone_overlap")).toEqual([]);
+    for (const channel of LAYOUT.channels) {
+      for (const zone of LAYOUT.zones) {
+        const x = Math.min(channel.boxM.x + channel.boxM.w, zone.boxM.x + zone.boxM.w) - Math.max(channel.boxM.x, zone.boxM.x);
+        const y = Math.min(channel.boxM.y + channel.boxM.d, zone.boxM.y + zone.boxM.d) - Math.max(channel.boxM.y, zone.boxM.y);
+        expect(x > 0 && y > 0, `${channel.id} through ${zone.id}`).toBe(false);
+      }
+    }
+  });
+
+  test("the v2 draft's own geometry fails: perim_S ran through the fish pond", () => {
+    const old = clone(layoutJson);
+    const perimS = old.channels.find((channel) => channel.id === "perim_S");
+    if (!perimS) throw new Error("perim_S is missing");
+    perimS.x_m = 5;
+    perimS.w_m = 90;
+    const violations = layoutViolations(old);
+    expect(checksOf(violations)).toContain("channel.zone_overlap");
+    expect(violations.find((violation) => violation.check === "channel.zone_overlap")?.detail).toContain("fish_pond");
+    // And the patch is what fixed it: 34..95 m misses the pond, which ends at x = 33.
+    const now = LAYOUT.channels.find((channel) => channel.id === "perim_S");
+    if (!now) throw new Error("perim_S is missing from the saved file");
+    expect(now.boxM.x).toBe(34);
+    expect(now.boxM.w).toBe(61);
+    expect(now.boxM.x + now.boxM.w).toBe(95);
+  });
+
+  test("a channel under a gravel path is allowed and listed, not an error", () => {
+    const demo = clone(layoutJson);
+    const ab = demo.channels.find((channel) => channel.id === "A_B");
+    if (!ab) throw new Error("A_B is missing");
+    ab.y_m = 56.5; // across the cross_AB path
+    const overlaps = channelPathOverlaps(toLayout(demo));
+    expect(overlaps.some((entry) => entry.channel === "A_B" && entry.path === "cross_AB")).toBe(true);
+    expect(checksOf(layoutViolations(demo))).not.toContain("channel.zone_overlap");
+    // The saved file's own crossings are listed even though they are all fine.
+    const saved = channelPathOverlaps(LAYOUT);
+    expect(saved.length).toBeGreaterThan(0);
+    for (const entry of saved) expect(entry.areaM2).toBeGreaterThan(0);
+  });
+});
+
+describe("the v2.1 patch says what it changed", () => {
+  test("the version record carries the old digest and the two changed values", () => {
+    expect(LAYOUT.schemaVersion).toBe("farm-layout-v2.1-draft");
+    expect(LAYOUT.supersedes).not.toBeNull();
+    expect(LAYOUT.supersedes?.schemaVersion).toBe("farm-layout-v2-draft");
+    expect(LAYOUT.supersedes?.sha256).toBe("8940c725277f6667778c56f3071f1b992b0500a021ce84a692ae5680a3ba76be");
+    const changes = LAYOUT.changes.filter((change) => change.id === "perim_S");
+    expect(changes.map((change) => `${change.field}:${change.from}->${change.to}`)).toEqual(["x_m:5->34", "w_m:90->61"]);
+    for (const change of LAYOUT.changes) expect(change.why.length).toBeGreaterThan(10);
+  });
+});
+
 describe("the validator has teeth", () => {
   test("each of the four injected faults is caught by the check it targets", () => {
     for (const fault of FAULTS) {
@@ -165,8 +221,10 @@ describe("the validator has teeth", () => {
 });
 
 describe("the world switch", () => {
-  test("the data asks for the hectare world by default", () => {
-    expect(WORLD_ID).toBe("hectare_v2");
+  test("the data builds the acre until step 3 flips the switch", () => {
+    // Step 1 review decision: acre stays the app default until the hectare can
+    // be rendered; step 3 flips this value to "hectare_v2".
+    expect(WORLD_ID).toBe("acre_v1");
     expect(WORLD_IDS).toEqual(["acre_v1", "hectare_v2"]);
   });
 

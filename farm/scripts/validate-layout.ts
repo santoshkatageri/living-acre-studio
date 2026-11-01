@@ -1,19 +1,25 @@
 /*  Step 1: validate the two hectare input files and write the report.
 
-    Usage:
-      npx tsx scripts/validate-layout.ts            validate, print, write the report
-      npx tsx scripts/validate-layout.ts --faults   inject the four faults in memory,
-                                                    show each one failing, then re-validate
-                                                    the untouched files to show the revert
+    Usage (from farm/):
+      npx tsx scripts/validate-layout.ts
 
-    Files are read from disk and never written: the only write is the report. */
+    Reads both files from disk and never writes them; the only write is
+    reports/step1-layout.json. Exits non-zero if the saved files are invalid,
+    so a broken layout fails CI as well as the build. */
 
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { FAULTS } from "./layout-faults";
 import { WORLD_ID } from "../src/sim/canon";
-import { layoutViolations, orchardViolations, readLayout, toLayout, type FarmLayout, type Violation } from "../src/sim/layout";
+import {
+  channelPathOverlaps,
+  layoutViolations,
+  orchardViolations,
+  toLayout,
+  type FarmLayout,
+  type Violation,
+} from "../src/sim/layout";
 
 const LAYOUT_FILE = "data/farm-layout-v2.json";
 const ORCHARD_FILE = "data/orchard-5layer.json";
@@ -48,6 +54,17 @@ const orchardText = readText(ORCHARD_FILE);
 const layoutRaw = parse(LAYOUT_FILE);
 const orchardRaw = parse(ORCHARD_FILE);
 
+/** Every violation of the pair, without ever throwing on a broken copy. */
+function allViolations(layout: unknown, orchard: unknown): Violation[] {
+  const violations = [...layoutViolations(layout)];
+  try {
+    violations.push(...orchardViolations(orchard, toLayout(layout)));
+  } catch (error) {
+    violations.push({ check: "orchard.unchecked", detail: (error as Error).message });
+  }
+  return violations;
+}
+
 /* ------------------------------- the faults ------------------------------- */
 
 interface FaultResult {
@@ -65,15 +82,7 @@ function runFaults(): FaultResult[] {
     const badLayout = clone(layoutRaw);
     const badOrchard = clone(orchardRaw);
     fault.apply(badLayout, badOrchard);
-    // The layout checks run first; the orchard cross-checks need a layout
-    // object even when that layout is the broken one, so convert without
-    // validating (and fall back to the layout faults alone if it cannot).
-    const violations = [...layoutViolations(badLayout)];
-    try {
-      violations.push(...orchardViolations(badOrchard, toLayout(badLayout)));
-    } catch (error) {
-      console.log(`  (orchard cross-checks skipped for ${fault.id}: ${(error as Error).message})`);
-    }
+    const violations = allViolations(badLayout, badOrchard);
     results.push({
       id: fault.id,
       what: fault.what,
@@ -85,18 +94,56 @@ function runFaults(): FaultResult[] {
   }
   // The "revert": the files on disk were never touched, so validating them
   // again is the proof. Confirm that and record it.
-  const clean = [...layoutViolations(layoutRaw), ...orchardViolations(orchardRaw, readLayout(layoutRaw))];
+  const clean = allViolations(layoutRaw, orchardRaw);
   for (const result of results) result.reverted_clean = clean.length === 0;
   return results;
 }
 
+/* -------------------- the channel rules, demonstrated --------------------- */
+
+/*  Two things to show: a channel through a zone is an error (the v2 draft had
+    one — perim_S crossed the fish pond — and v2.1 moved it), and a channel under
+    a gravel path is fine and only listed. */
+
+function prepatchChannelProof(): { geometry: string; violations: Violation[]; overlaps: { channel: string; path: string; areaM2: number }[] } {
+  const old = clone(layoutRaw) as { channels: { id: string; x_m: number; y_m: number; w_m: number; d_m: number }[] };
+  const perimS = old.channels.find((channel) => channel.id === "perim_S");
+  if (!perimS) throw new Error("perim_S is missing from the layout");
+  // The v2 draft geometry, restored in memory only.
+  perimS.x_m = 5;
+  perimS.w_m = 90;
+  const layout = toLayout(old);
+  return {
+    geometry: "perim_S x_m 5, w_m 90 (the v2 draft)",
+    violations: layoutViolations(old),
+    overlaps: channelPathOverlaps(layout),
+  };
+}
+
+function channelOverPathDemo(): { geometry: string; violations: Violation[]; overlaps: { channel: string; path: string; areaM2: number }[] } {
+  const demo = clone(layoutRaw) as { channels: { id: string; x_m: number; y_m: number; w_m: number; d_m: number }[] };
+  const ab = demo.channels.find((channel) => channel.id === "A_B");
+  if (!ab) throw new Error("A_B is missing from the layout");
+  // Slide the A/B channel onto the cross_AB path: a ditch under a path.
+  ab.y_m = 56.5;
+  const layout = toLayout(demo);
+  return {
+    geometry: "A_B y_m 56.5 (laid across the cross_AB path)",
+    violations: layoutViolations(demo),
+    overlaps: channelPathOverlaps(layout),
+  };
+}
+
 /* ------------------------------- the report ------------------------------- */
 
-const violations = [...layoutViolations(layoutRaw), ...orchardViolations(orchardRaw, readLayout(layoutRaw))];
-const layout: FarmLayout = readLayout(layoutRaw);
+const violations = allViolations(layoutRaw, orchardRaw);
+const valid = violations.length === 0;
+const layout: FarmLayout | null = valid ? toLayout(layoutRaw) : null;
 const faults = runFaults();
+const prepatch = prepatchChannelProof();
+const channelDemo = channelOverPathDemo();
 
-const zoneRows = layout.zones.map((zone) => ({
+const zoneRows = (layout?.zones ?? []).map((zone) => ({
   id: zone.id,
   ref: zone.ref,
   kind: zone.kind,
@@ -106,7 +153,7 @@ const zoneRows = layout.zones.map((zone) => ({
   box_ft: zone.boxFt,
 }));
 
-const kinds = [...new Set(layout.zones.map((zone) => zone.kind))].sort();
+const kinds = [...new Set((layout?.zones ?? []).map((zone) => zone.kind))].sort();
 const totalsByKind = Object.fromEntries(
   kinds.map((kind) => {
     const zones = zoneRows.filter((zone) => zone.kind === kind);
@@ -121,26 +168,33 @@ const totalsByKind = Object.fromEntries(
   }),
 );
 
+const channelPathList = layout ? channelPathOverlaps(layout) : [];
+
 const report = {
   step: 1,
   generated_by: "scripts/validate-layout.ts",
   world_switch: WORLD_ID,
+  data_version: layout?.schemaVersion ?? "invalid",
+  supersedes: layout?.supersedes ?? null,
+  changes: layout?.changes ?? [],
   inputs: {
     // sha256 is over the UTF-8 bytes; the counts are characters, which differs
     // from bytes in the files that carry Devanagari and Kannada text.
     [LAYOUT_FILE]: { utf8_chars: layoutText.length, sha256: sha256(layoutText) },
     [ORCHARD_FILE]: { utf8_chars: orchardText.length, sha256: sha256(orchardText) },
   },
-  parcel: {
-    side_m: layout.parcel.sideM,
-    side_ft: layout.parcel.sideFt,
-    area_m2: layout.parcel.areaM2,
-    gate: layout.parcel.gate,
-  },
-  zone_count: layout.zones.length,
-  path_count: layout.paths.length,
-  channel_count: layout.channels.length,
-  walkable_zones: layout.zones.filter((zone) => zone.walkable).length,
+  parcel: layout
+    ? {
+        side_m: layout.parcel.sideM,
+        side_ft: layout.parcel.sideFt,
+        area_m2: layout.parcel.areaM2,
+        gate: layout.parcel.gate,
+      }
+    : null,
+  zone_count: layout ? layout.zones.length : 0,
+  path_count: layout ? layout.paths.length : 0,
+  channel_count: layout ? layout.channels.length : 0,
+  walkable_zones: layout ? layout.zones.filter((zone) => zone.walkable).length : 0,
   zones: zoneRows,
   totals_by_kind: totalsByKind,
   checks_run: [
@@ -150,11 +204,31 @@ const report = {
     "zone.interior (5..95 m)",
     "zone.overlap (zone vs zone)",
     "zone.path_overlap (zone vs gravel path)",
+    "channel.zone_overlap (channel vs zone is an error)",
+    "channel.path_overlap (channel vs path is allowed, listed below)",
     "crop_plot.size (22 x 24 m) and crop_plot.present",
     "zone.feet (declared ft columns vs metres x 3.28084)",
     "orchard.size / alley.inside / alley.shape / orchard.entrance / orchard.layers / orchard.species / orchard.needs_review / orchard.placeholder",
   ],
   violations,
+  channel_checks: {
+    zone_overlaps: violations.filter((violation) => violation.check === "channel.zone_overlap"),
+    path_overlaps_listed: channelPathList,
+  },
+  channel_check_proofs: {
+    prepatch_perim_s: {
+      what: "the v2 draft's own channel geometry, re-checked in memory",
+      geometry: prepatch.geometry,
+      violations: prepatch.violations,
+      listed_path_overlaps: prepatch.overlaps,
+    },
+    channel_over_path: {
+      what: "a channel under a gravel path must be allowed and listed, not an error",
+      geometry: channelDemo.geometry,
+      violations: channelDemo.violations,
+      listed_path_overlaps: channelDemo.overlaps,
+    },
+  },
   injected_faults: faults.map((fault) => ({
     id: fault.id,
     what: fault.what,
@@ -165,23 +239,36 @@ const report = {
   })),
 };
 
-console.log("=== clean files ===");
+console.log("=== saved files ===");
 printViolations("layout + orchard", violations);
-console.log(`zones ${layout.zones.length} · paths ${layout.paths.length} · channels ${layout.channels.length}`);
-console.log(`parcel ${layout.parcel.sideM} m (${layout.parcel.sideFt} ft) square, ${layout.parcel.areaM2} m2`);
-for (const [kind, totals] of Object.entries(totalsByKind)) {
-  console.log(`  ${kind.padEnd(17)} ${String(totals.count).padStart(2)} zones  ${totals.area_m2.toFixed(2).padStart(8)} m2  ${totals.area_ft2.toFixed(2).padStart(10)} ft2`);
+if (layout) {
+  console.log(`zones ${layout.zones.length} · paths ${layout.paths.length} · channels ${layout.channels.length}`);
+  console.log(`data ${layout.schemaVersion}${layout.supersedes ? ` (supersedes ${layout.supersedes.schemaVersion})` : ""}`);
+  console.log(`parcel ${layout.parcel.sideM} m (${layout.parcel.sideFt} ft) square, ${layout.parcel.areaM2} m2`);
+  for (const [kind, totals] of Object.entries(totalsByKind)) {
+    console.log(`  ${kind.padEnd(17)} ${String(totals.count).padStart(2)} zones  ${totals.area_m2.toFixed(2).padStart(8)} m2  ${totals.area_ft2.toFixed(2).padStart(10)} ft2`);
+  }
+  console.log(`channel over path (allowed, listed): ${channelPathList.length === 0 ? "none" : channelPathList.map((entry) => `${entry.channel} x ${entry.path} (${entry.areaM2} m2)`).join(", ")}`);
+  for (const change of layout.changes) {
+    console.log(`changed ${change.id}.${change.field}: ${change.from} -> ${change.to} (${change.why})`);
+  }
 }
+
+console.log("\n=== channel proofs ===");
+console.log(`pre-patch geometry, ${prepatch.geometry}: ${prepatch.violations.length} violation(s)`);
+for (const violation of prepatch.violations) console.log(`  [${violation.check}] ${violation.detail}`);
+console.log(`channel under a path, ${channelDemo.geometry}: ${channelDemo.violations.length} violation(s), ${channelDemo.overlaps.length} listed`);
+for (const overlap of channelDemo.overlaps) console.log(`  listed: ${overlap.channel} x ${overlap.path} (${overlap.areaM2} m2)`);
 
 console.log("\n=== injected faults (in memory; files untouched) ===");
 for (const fault of faults) {
   console.log(`${fault.id}: ${fault.what} → expected [${fault.expected_check}] caught=${fault.caught}`);
   for (const violation of fault.violations) console.log(`    [${violation.check}] ${violation.detail}`);
 }
-console.log(`\nrevert: both files re-validate with ${violations.length} violation(s) — ${violations.length === 0 ? "clean" : "STILL BROKEN"}`);
+console.log(`\nrevert: both files re-validate with ${violations.length} violation(s) — ${valid ? "clean" : "STILL BROKEN"}`);
 
 mkdirSync("reports", { recursive: true });
 writeFileSync(REPORT_FILE, `${JSON.stringify(report, null, 1)}\n`, "utf8");
 console.log(`\nwrote ${REPORT_FILE}`);
 
-if (violations.length > 0) process.exitCode = 1;
+if (!valid) process.exitCode = 1;

@@ -32,11 +32,12 @@ Both are PLACEHOLDER: zones eyeballed from the reference blueprint, species and
 counts from general knowledge. The orchard file also flags `names.hi` and
 `names.kn` as `needs_review`.
 
-**World switch:** `sim_overrides.overrides.world` is `"hectare_v2"` (the default
-the brief asks for); `"acre_v1"` is the other accepted value. `WORLD_ID` and
-`parseWorldId()` in `src/sim/canon.ts` read and refuse values. The acre world is
-still the one the app builds (`WORLD`), so the 157 acre tests keep passing; the
-hectare world becomes the app's world in step 3, when the renderer can draw it.
+**World switch:** `sim_overrides.overrides.world` reads `"acre_v1"` — the acre
+is the app default, because the app still builds `WORLD` (canon v1) and the data
+must describe what the app actually does. `"hectare_v2"` is the other accepted
+value; `WORLD_ID` and `parseWorldId()` in `src/sim/canon.ts` read and refuse
+values. **Step 3 flips the switch to `hectare_v2`** and the acre tests then ask
+for `acre_v1` explicitly (step-1 review decision).
 
 **Validator** (`scripts/validate-layout.ts`, logic in `src/sim/layout.ts` and a
 small JSON Schema subset in `src/sim/json-schema.ts` — no new dependency):
@@ -61,6 +62,50 @@ revert is the clean second run) and each is caught by its own check:
 `reports/step1-layout.json` carries per-zone areas (m2 and ft2), totals per kind
 (8 building, 4 crop plot, 3 livestock, 1 orchard, 3 rotational strip,
 1 vegetables, 1 water, 1 yard), the empty violation list and the fault results.
+
+## Step-1 review decisions (recorded, not yet built)
+
+- **World default:** acre until step 3 can draw the hectare, then
+  `world: "hectare_v2"`; the acre tests will select `acre_v1` explicitly.
+- **L4 / L5 height cap:** no `visual_height_cap_ft` for those two layers — their
+  own `height_ft` (max 4 ft and 1.5 ft) is the cap.
+- **Boundary walks and the belt:** the belt occupies 0–3 m and 97–100 m on every
+  side; `walk_S`/`walk_E` sit between the belt and the interior, which is
+  intended. **The belt needs a gap only at the north gate**: 3 m wide, centred on
+  x = 52.5 m.
+
+## Channels: through a zone is an error, under a path is listed
+
+New check (`channel.zone_overlap`): a channel running through a zone is a
+violation. A channel crossing a gravel path is normal (bridged or culverted), so
+it is **not** a violation — `channelPathOverlaps()` lists the crossings in the
+report instead. The v2 draft failed on exactly one: `perim_S` ran through the
+fish pond (22.4 m2 of open water). The saved file now lists four allowed
+crossings — `trunk × cross_N` 2 m2, `trunk × cross_E` 2 m2,
+`perim_W × walk_W` 70.4 m2, `perim_S × lane` 1.6 m2 — and no zone overlaps.
+
+## Layout patch v2.1-draft
+
+`data/farm-layout-v2.json` is now `farm-layout-v2.1-draft`; it records what it
+replaced (`supersedes.schema_version` + the **sha256 of the v2 draft**,
+`8940c725…76be`) and a `changes` entry per value:
+
+| zone/channel | field | from | to |
+| --- | --- | --- | --- |
+| `perim_S` | `x_m` | 5 | 34 |
+| `perim_S` | `w_m` | 90 | 61 |
+
+Nothing else changed: a structural diff against `92ea7a3:farm/data/farm-layout-v2.json`
+shows these two values plus the version record, and no other path. The east end
+stays at x = 95 m, so only the west end moved, and the pond (x 5..33 m) is clear.
+
+## The farm has its own repository
+
+`git subtree split --prefix=farm` at commit `92ea7a3` produced a 6-commit farm
+history; that is checked out at **`/home/user/go-dharaa-farm`** (branch `main`,
+tree identical to `92ea7a3:farm`). `farm/` stays in the studio repo and nothing
+was pushed from the new repository — it has **no remote** yet. `npm ci`, `npm
+test`, `npm run typecheck` and `npm run build` all pass there.
 
 ## The path network (M4)
 

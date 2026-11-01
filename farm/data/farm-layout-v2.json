@@ -1,5 +1,26 @@
 {
- "schema_version": "farm-layout-v2-draft",
+ "schema_version": "farm-layout-v2.1-draft",
+ "supersedes": {
+  "schema_version": "farm-layout-v2-draft",
+  "sha256": "8940c725277f6667778c56f3071f1b992b0500a021ce84a692ae5680a3ba76be",
+  "note": "farm-layout-v2-draft, replaced by this patch; the digest is of the file as delivered in step 1."
+ },
+ "changes": [
+  {
+   "id": "perim_S",
+   "field": "x_m",
+   "from": 5,
+   "to": 34,
+   "why": "the south perimeter channel ran through the fish pond (the pond spans x 5..33 m, 22.4 m2 of open water); it now starts east of the pond"
+  },
+  {
+   "id": "perim_S",
+   "field": "w_m",
+   "from": 90,
+   "to": 61,
+   "why": "keeps the channel's east end at x = 95 m, so only its west end moved"
+  }
+ ],
  "units_note": "meters are authoritative; ft = m x 3.28084; origin NW, +x east, +y south; 1 sim unit = 1 ft",
  "source": "Zone boxes estimated by eye from the reference IFS blueprint; every value is a PLACEHOLDER until the owner approves it. Cattle shed 34x24 ft, farmhouse 30x22 ft and goshala style are carried from canon v1.",
  "parcel": {
@@ -469,9 +490,9 @@
   },
   {
    "id": "perim_S",
-   "x_m": 5,
+   "x_m": 34,
    "y_m": 94.2,
-   "w_m": 90,
+   "w_m": 61,
    "d_m": 0.8
   }
  ],

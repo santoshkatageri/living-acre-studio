@@ -1,11 +1,33 @@
 {
  "step": 1,
  "generated_by": "scripts/validate-layout.ts",
- "world_switch": "hectare_v2",
+ "world_switch": "acre_v1",
+ "data_version": "farm-layout-v2.1-draft",
+ "supersedes": {
+  "schemaVersion": "farm-layout-v2-draft",
+  "sha256": "8940c725277f6667778c56f3071f1b992b0500a021ce84a692ae5680a3ba76be",
+  "note": "farm-layout-v2-draft, replaced by this patch; the digest is of the file as delivered in step 1."
+ },
+ "changes": [
+  {
+   "id": "perim_S",
+   "field": "x_m",
+   "from": 5,
+   "to": 34,
+   "why": "the south perimeter channel ran through the fish pond (the pond spans x 5..33 m, 22.4 m2 of open water); it now starts east of the pond"
+  },
+  {
+   "id": "perim_S",
+   "field": "w_m",
+   "from": 90,
+   "to": 61,
+   "why": "keeps the channel's east end at x = 95 m, so only its west end moved"
+  }
+ ],
  "inputs": {
   "data/farm-layout-v2.json": {
-   "utf8_chars": 8217,
-   "sha256": "8940c725277f6667778c56f3071f1b992b0500a021ce84a692ae5680a3ba76be"
+   "utf8_chars": 8870,
+   "sha256": "5269b3803e53ca14b4def9c5e840d8cf726453f68cabbc990086fa335ee229fd"
   },
   "data/orchard-5layer.json": {
    "utf8_chars": 6943,
@@ -386,11 +408,104 @@
   "zone.interior (5..95 m)",
   "zone.overlap (zone vs zone)",
   "zone.path_overlap (zone vs gravel path)",
+  "channel.zone_overlap (channel vs zone is an error)",
+  "channel.path_overlap (channel vs path is allowed, listed below)",
   "crop_plot.size (22 x 24 m) and crop_plot.present",
   "zone.feet (declared ft columns vs metres x 3.28084)",
   "orchard.size / alley.inside / alley.shape / orchard.entrance / orchard.layers / orchard.species / orchard.needs_review / orchard.placeholder"
  ],
  "violations": [],
+ "channel_checks": {
+  "zone_overlaps": [],
+  "path_overlaps_listed": [
+   {
+    "channel": "trunk",
+    "path": "cross_N",
+    "areaM2": 2
+   },
+   {
+    "channel": "trunk",
+    "path": "cross_E",
+    "areaM2": 2
+   },
+   {
+    "channel": "perim_W",
+    "path": "walk_W",
+    "areaM2": 70.4
+   },
+   {
+    "channel": "perim_S",
+    "path": "lane",
+    "areaM2": 1.6
+   }
+  ]
+ },
+ "channel_check_proofs": {
+  "prepatch_perim_s": {
+   "what": "the v2 draft's own channel geometry, re-checked in memory",
+   "geometry": "perim_S x_m 5, w_m 90 (the v2 draft)",
+   "violations": [
+    {
+     "check": "channel.zone_overlap",
+     "detail": "channel \"perim_S\" runs through zone \"fish_pond\" (22.4 m2)"
+    }
+   ],
+   "listed_path_overlaps": [
+    {
+     "channel": "trunk",
+     "path": "cross_N",
+     "areaM2": 2
+    },
+    {
+     "channel": "trunk",
+     "path": "cross_E",
+     "areaM2": 2
+    },
+    {
+     "channel": "perim_W",
+     "path": "walk_W",
+     "areaM2": 70.4
+    },
+    {
+     "channel": "perim_S",
+     "path": "lane",
+     "areaM2": 1.6
+    }
+   ]
+  },
+  "channel_over_path": {
+   "what": "a channel under a gravel path must be allowed and listed, not an error",
+   "geometry": "A_B y_m 56.5 (laid across the cross_AB path)",
+   "violations": [],
+   "listed_path_overlaps": [
+    {
+     "channel": "trunk",
+     "path": "cross_N",
+     "areaM2": 2
+    },
+    {
+     "channel": "trunk",
+     "path": "cross_E",
+     "areaM2": 2
+    },
+    {
+     "channel": "A_B",
+     "path": "cross_AB",
+     "areaM2": 46
+    },
+    {
+     "channel": "perim_W",
+     "path": "walk_W",
+     "areaM2": 70.4
+    },
+    {
+     "channel": "perim_S",
+     "path": "lane",
+     "areaM2": 1.6
+    }
+   ]
+  }
+ },
  "injected_faults": [
   {
    "id": "overlap",

@@ -139,7 +139,12 @@ const round3 = (n: number): number => Math.round(n * 1000) / 1000;
 
 /*  World switch. The acre world is canon v1 and the hectare world is the v2
     layout in data/farm-layout-v2.json. Both must build; the switch says which
-    one the app stands up. */
+    one the app stands up.
+
+    Decision (step 1 review): the acre stays the app default until step 3 can
+    render the hectare, then the switch flips to "hectare_v2" and the acre
+    tests ask for "acre_v1" explicitly. The switch therefore reads acre_v1 now,
+    so the data and the app agree. */
 export type WorldId = "acre_v1" | "hectare_v2";
 
 export const WORLD_IDS: WorldId[] = ["acre_v1", "hectare_v2"];
