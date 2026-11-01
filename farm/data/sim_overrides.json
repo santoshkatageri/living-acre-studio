@@ -286,6 +286,294 @@
       "node_spacing_ft": 4,
       "clearance_ft": 2,
       "note": "PLACEHOLDER — the garden walk. Its centreline is (belt inner edge + offset + width/2) in from the boundary, with notches around the two buildings and around the pond ring, because a plain rounded rectangle collides with all three."
+    },
+    "hectare_look": {
+      "_note": "PLACEHOLDER - the hectare world's look. Every value is a guess at the reference pictures, kept in data so it can be argued with without touching code.",
+      "palette": {
+        "ground": "#6f7a4a",
+        "ground_alt": "#7b8653",
+        "path": "#a8926a",
+        "path_edge": "#8b7853",
+        "water": "#3f7d8c",
+        "bank": "#8c7a55",
+        "belt_trunk": "#5c4231",
+        "belt_leaf": "#5f7a45",
+        "sky": "#cfd9d2"
+      },
+      "zone_colours": {
+        "crop_plot": "#7d6b3f",
+        "rotational_strip": "#6b6a3a",
+        "orchard": "#4f6136",
+        "vegetables": "#5c6b3a",
+        "livestock": "#8a7a5c",
+        "water": "#3f7d8c",
+        "building": "#9a8161",
+        "yard": "#93815f"
+      },
+      "zone_heights_ft": {
+        "crop_plot": 0.5,
+        "rotational_strip": 0.4,
+        "orchard": 1.0,
+        "vegetables": 0.6,
+        "livestock": 3.0,
+        "water": 0.1,
+        "building": 3.2,
+        "yard": 0.2
+      },
+      "buildings": {
+        "cattle_shed": {
+          "_note": "A raised shed: 13 ft to the beam frame, a 0.4 ft floor, open sides. A solid roof at any height hides the cattle from the farm view, and at 6.5 ft it cut the third-person camera off.",
+          "height_ft": 13.0,
+          "floor_ft": 0.4,
+          "open": true
+        },
+        "tractor_shed": {
+          "height_ft": 10.0,
+          "floor_ft": 0.4,
+          "open": true
+        },
+        "farmhouse": {
+          "height_ft": 9.0,
+          "floor_ft": 0.4,
+          "open": false
+        },
+        "grain_store": {
+          "height_ft": 7.5,
+          "floor_ft": 0.3,
+          "open": false
+        },
+        "biogas": {
+          "height_ft": 6.0,
+          "floor_ft": 0.2,
+          "open": false
+        },
+        "vermicompost": {
+          "height_ft": 3.5,
+          "floor_ft": 0.2,
+          "open": true
+        },
+        "solar_dryer": {
+          "height_ft": 4.5,
+          "floor_ft": 0.3,
+          "open": true
+        },
+        "duck_coop_1": {
+          "height_ft": 4.0,
+          "floor_ft": 0.3,
+          "open": false
+        },
+        "duck_coop_2": {
+          "height_ft": 4.0,
+          "floor_ft": 0.3,
+          "open": false
+        }
+      },
+      "farmer": {
+        "_note": "PLACEHOLDER - from the reference sheet: silver hair and a white headband, blue-grey kurta with rolled cuffs, salmon dhoti, bare feet, dark moustache, long wooden staff.",
+        "skin": "#8a5a3c",
+        "hair": "#cfcac2",
+        "headband": "#f1ead9",
+        "kurta": "#7d8ba0",
+        "dhoti": "#d8846a",
+        "sash": "#c9a227",
+        "staff": "#7a5a38",
+        "moustache": "#3b2a22",
+        "height_m": 1.68
+      },
+      "camera": {
+        "default_view_ft": 262.5,
+        "overview_margin": 1.02,
+        "max_zoom": 9.0,
+        "pitch_deg": 35.0,
+        "yaw_deg": 45.0,
+        "follow": {
+          "_note": "PLACEHOLDER - behind and above the farmer, looking a little ahead of him: at 20 ft back and 16 degrees up he fills about 40% of the frame height.",
+          "pitch_deg": 16.0,
+          "distance_ft": 20.0,
+          "height_ft": 8.0,
+          "look_ahead_ft": 6.0,
+          "look_height_ft": 3.0,
+          "fov_deg": 52.0,
+          "min_distance_ft": 10.0,
+          "max_distance_ft": 40.0
+        }
+      },
+      "labels": {
+        "_note": "PLACEHOLDER - zone names stand on boards at a corner of each space instead of floating in the air: board_inset_ft in from the corner for an open space, board_outset_ft out for a building. growth_from_ft is the frame height at which the sign is its true size; it grows after that so the name stays legible over the whole farm, and stops at board_growth_max.",
+        "post_height_ft": 5.6,
+        "post_width_ft": 0.4,
+        "board_width_ft": 12.0,
+        "board_height_ft": 3.6,
+        "board_thickness_ft": 0.28,
+        "board_inset_ft": 6.5,
+        "board_outset_ft": 7.0,
+        "board_growth_max": 3.0,
+        "growth_from_ft": 120.0,
+        "text_fill_frac": 0.62,
+        "board_colour": "#6f5535",
+        "post_colour": "#4b3826",
+        "text_colour": "#f7f1de"
+      },
+      "water": {
+        "_note": "PLACEHOLDER - the channels and the pond as moving water: a rippling surface drifting toward the pond, and rings breaking on it.",
+        "flow_ft_per_s": 1.6,
+        "texture_tile_ft": 6.0,
+        "ripple_count": 18,
+        "ripple_cycle_s": 2.8,
+        "ripple_max_ft": 3.2,
+        "ripple_glow": 0.35,
+        "ripple_colour": "#eaf7fc",
+        "surface_roughness": 0.2
+      },
+      "livestock": {
+        "_note": "PLACEHOLDER - the herd and the flock, placed inside their pens: counts per species per zone.",
+        "seed": 20261101,
+        "counts": {
+          "cattle_shed": {
+            "bullock": 2,
+            "buffalo": 3
+          },
+          "poultry": {
+            "hen": 9
+          },
+          "goat_pen": {
+            "goat": 5
+          }
+        }
+      },
+      "belt": {
+        "seed": 4211,
+        "spacing_ft": 12.0,
+        "jitter_ft": 3.5,
+        "rows": 2,
+        "species": [
+          {
+            "id": "neem",
+            "heightFt": [
+              22,
+              30
+            ],
+            "canopyFt": [
+              12,
+              17
+            ],
+            "trunk": "#5c4231",
+            "leaf": "#4f6b3a"
+          },
+          {
+            "id": "tamarind",
+            "heightFt": [
+              26,
+              34
+            ],
+            "canopyFt": [
+              16,
+              22
+            ],
+            "trunk": "#5a4030",
+            "leaf": "#5b7440"
+          },
+          {
+            "id": "fodder",
+            "heightFt": [
+              14,
+              20
+            ],
+            "canopyFt": [
+              8,
+              12
+            ],
+            "trunk": "#6a4f38",
+            "leaf": "#6f8a4a"
+          }
+        ],
+        "canopy_top_limit_ft": 34.0
+      },
+      "tour": {
+        "_note": "PLACEHOLDER - the scripted farm tour, one shot after another: where the camera looks, how wide the frame is in feet (null = the whole farm), how long it takes to get there, how long it holds, and the caption. A shot with a walk_to zone sends the farmer there while it is on screen. Driven by a tour clock, not the frame rate, so the camera path is the same film every time.",
+        "shots": [
+          {
+            "id": "farm",
+            "caption": "The whole farm: 22 spaces in a 100 m square",
+            "mode": "iso",
+            "zone": null,
+            "frame_ft": null,
+            "move_s": 0,
+            "hold_s": 3.5,
+            "walk_to": null
+          },
+          {
+            "id": "crops",
+            "caption": "Four crop plots: wheat, jowar, sunflower, groundnut",
+            "mode": "iso",
+            "zone": "plot_wheat",
+            "frame_ft": 150,
+            "move_s": 2.5,
+            "hold_s": 3,
+            "walk_to": null
+          },
+          {
+            "id": "orchard",
+            "caption": "The orchard: five layers, 44 trees",
+            "mode": "iso",
+            "zone": "orchard",
+            "frame_ft": 140,
+            "move_s": 2.5,
+            "hold_s": 3,
+            "walk_to": null
+          },
+          {
+            "id": "walk",
+            "caption": "Third person: following the farmer along the north walk",
+            "mode": "third-person",
+            "zone": null,
+            "frame_ft": null,
+            "move_s": 0.5,
+            "hold_s": 6.5,
+            "walk_to": "plot_wheat"
+          },
+          {
+            "id": "cattle",
+            "caption": "Cattle shed: a raised 13 ft frame keeps the view open",
+            "mode": "iso",
+            "zone": "cattle_shed",
+            "frame_ft": 120,
+            "move_s": 2.5,
+            "hold_s": 3,
+            "walk_to": null
+          },
+          {
+            "id": "pond",
+            "caption": "The fish pond, fed by the channels",
+            "mode": "iso",
+            "zone": "fish_pond",
+            "frame_ft": 130,
+            "move_s": 2.5,
+            "hold_s": 3,
+            "walk_to": null
+          },
+          {
+            "id": "rotation",
+            "caption": "Rotation strips: pulses, cereals, fodder",
+            "mode": "iso",
+            "zone": "rot_pulses",
+            "frame_ft": 130,
+            "move_s": 2.5,
+            "hold_s": 3,
+            "walk_to": null
+          },
+          {
+            "id": "home",
+            "caption": "Back to the whole farm",
+            "mode": "iso",
+            "zone": null,
+            "frame_ft": null,
+            "move_s": 3,
+            "hold_s": 2.5,
+            "walk_to": null
+          }
+        ]
+      }
     }
   }
 }
