@@ -6,6 +6,8 @@
 
 declare module "node:fs" {
   export function readFileSync(path: string, encoding: "utf8"): string;
+  /** Binary read: the GLB the character tests load. */
+  export function readFileSync(path: string): Uint8Array;
   export function writeFileSync(path: string, data: string, encoding: "utf8"): void;
   export function mkdirSync(path: string, options: { recursive: true }): void;
   export function existsSync(path: string): boolean;
@@ -22,6 +24,10 @@ declare module "node:crypto" {
     digest(encoding: "hex"): string;
   }
   export function createHash(algorithm: "sha256"): Hash;
+}
+
+declare module "node:url" {
+  export function fileURLToPath(url: URL | string): string;
 }
 
 declare const process: { exitCode: number };

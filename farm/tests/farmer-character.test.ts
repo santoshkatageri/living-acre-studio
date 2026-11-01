@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -22,7 +23,8 @@ import { REST_POSE } from "../src/hectare/gait";
 const GLB = new URL("../public/models/farmer.glb", import.meta.url);
 
 async function farmer() {
-  const buffer = readFileSync(GLB);
+  // A path, not a URL: the URL overload resolves to a string in some @types/node.
+  const buffer = readFileSync(fileURLToPath(GLB));
   const data = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
   return new GLTFLoader().parseAsync(data, "");
 }
