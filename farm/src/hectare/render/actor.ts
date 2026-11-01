@@ -4,124 +4,44 @@ import type { Pose } from "../gait";
 import { REST_POSE } from "../gait";
 import type { FarmerLook } from "../world";
 
-/*  The farmer: silver hair and a white headband, a blue-grey kurta with rolled
-    cuffs, a salmon dhoti, bare feet, a dark moustache and a long staff — the
-    reference sheet, in boxes and spheres.
+import type { ActorMotion, FarmerClip } from "./farmer-motion";
+import { blendFor, dueForLookAround, isStanding } from "./farmer-motion";
+import { loadFarmerModel, type FarmerModel } from "./farmer-model";
 
-    Every limb hangs off a pivot at the hip or the shoulder, so a pose is a set of
-    rotations and the walk cycle is the only thing that writes them. */
+/*  The farmer.
+
+    He used to be eighteen boxes and a sphere. He is now a character: a rigged,
+    animated model authored in Blender — red turban, cream kurta, white dhoti,
+    green stole, sandals — loaded from `public/models/farmer.glb`.
+
+    What matters for the rest of the app is that this file still is an `Actor`:
+    `sync` puts him somewhere, `setFacing` turns him, `animate` takes the app's
+    `Pose`. The difference is that the pose is now a *phase* for the rig's own
+    walk cycle: the clip is scrubbed by the ground he covers, exactly as the
+    analytic cycle was, so his feet do not skate.
+
+    The model loads asynchronously; until it arrives, and if it fails, the group
+    is simply empty. Nothing else in the farm waits for it. */
 
 export interface Actor {
   mesh: THREE.Group;
   marker: THREE.Mesh;
+  /** Resolves when the rigged model is in the scene (or has failed to load). */
+  whenReady: Promise<void>;
   sync(xFt: number, yFt: number): void;
   setFacing(radians: number): void;
-  animate(pose: Pose): void;
+  animate(pose: Pose, motion?: ActorMotion): void;
+  /** Play a clip once — a gesture, feeding the cattle, watering. */
+  playOnce(clip: FarmerClip): void;
+  /** Clip lengths in seconds, once the model has loaded. */
+  durations: Partial<Record<FarmerClip, number>>;
   setTargetMarker(target: { x: number; y: number } | null): void;
   dispose(): void;
 }
 
-function material(colour: string, roughness = 0.9): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ color: new THREE.Color(colour), roughness, metalness: 0 });
-}
-
 export function createFarmer(look: FarmerLook): Actor {
-  const H = look.heightFt;
   const group = new THREE.Group();
   group.name = "farmer";
-
-  const body = new THREE.Group();
-  body.name = "farmer:body";
-  group.add(body);
-
-  const skin = material(look.skin, 0.85);
-  const kurta = material(look.kurta);
-  const dhoti = material(look.dhoti);
-  const hair = material(look.hair, 0.7);
-  const headband = material(look.headband, 0.6);
-  const staffMat = material(look.staff, 0.95);
-
-  const hipY = H * 0.48;
-  const shoulderY = H * 0.79;
-
-  // Legs: a dhoti-coloured limb hanging from a pivot at the hip.
-  const legLength = H * 0.46;
-  const legGeometry = new THREE.BoxGeometry(H * 0.13, legLength, H * 0.15);
-  legGeometry.translate(0, -legLength / 2, 0);
-  const makeLeg = (side: -1 | 1): THREE.Group => {
-    const pivot = new THREE.Group();
-    pivot.position.set(side * H * 0.075, hipY, 0);
-    const leg = new THREE.Mesh(legGeometry, dhoti);
-    leg.castShadow = true;
-    pivot.add(leg);
-    body.add(pivot);
-    return pivot;
-  };
-  const legFront = makeLeg(-1);
-  const legBack = makeLeg(1);
-
-  // The kurta: a tapering box, wider at the shoulder.
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(H * 0.34, H * 0.34, H * 0.24), kurta);
-  torso.position.y = hipY + H * 0.16;
-  torso.castShadow = true;
-  body.add(torso);
-
-  // A dhoti wrap at the waist, so the legs read as cloth rather than two sticks.
-  const wrap = new THREE.Mesh(new THREE.BoxGeometry(H * 0.36, H * 0.12, H * 0.28), dhoti);
-  wrap.position.y = hipY + H * 0.02;
-  wrap.castShadow = true;
-  body.add(wrap);
-
-  // The shoulder cloth: one band across the chest.
-  const sash = new THREE.Mesh(new THREE.BoxGeometry(H * 0.36, H * 0.05, H * 0.26), material(look.sash));
-  sash.position.y = hipY + H * 0.24;
-  sash.rotation.z = 0.16;
-  body.add(sash);
-
-  // Arms, pivoting at the shoulder.
-  const armLength = H * 0.36;
-  const armGeometry = new THREE.BoxGeometry(H * 0.085, armLength, H * 0.095);
-  armGeometry.translate(0, -armLength / 2, 0);
-  const makeArm = (side: -1 | 1): THREE.Group => {
-    const pivot = new THREE.Group();
-    pivot.position.set(side * H * 0.19, shoulderY, 0);
-    const arm = new THREE.Mesh(armGeometry, kurta);
-    arm.castShadow = true;
-    pivot.add(arm);
-    body.add(pivot);
-    return pivot;
-  };
-  const armFront = makeArm(-1);
-  const armBack = makeArm(1);
-
-  // Head, hair, headband, moustache.
-  const head = new THREE.Mesh(new THREE.SphereGeometry(H * 0.105, 16, 12), skin);
-  head.position.y = H * 0.9;
-  head.castShadow = true;
-  body.add(head);
-
-  const hairCap = new THREE.Mesh(new THREE.SphereGeometry(H * 0.11, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), hair);
-  hairCap.position.y = H * 0.907;
-  body.add(hairCap);
-
-  const band = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.111, H * 0.111, H * 0.035, 16, 1, true), headband);
-  band.position.y = H * 0.935;
-  body.add(band);
-
-  const moustache = new THREE.Mesh(new THREE.BoxGeometry(H * 0.09, H * 0.018, H * 0.02), material(look.moustache, 1));
-  moustache.position.set(0, H * 0.874, H * 0.096);
-  body.add(moustache);
-
-  // The staff: long, in the front hand, planted as he walks.
-  const staffLength = H * 0.95;
-  const staffPivot = new THREE.Group();
-  staffPivot.name = "farmer:staff";
-  staffPivot.position.set(-H * 0.2, shoulderY - armLength * 0.85, H * 0.06);
-  const staff = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.012, H * 0.012, staffLength, 6), staffMat);
-  staff.position.y = -staffLength * 0.34;
-  staff.castShadow = true;
-  staffPivot.add(staff);
-  body.add(staffPivot);
 
   // Where a click will send him.
   const marker = new THREE.Mesh(
@@ -134,23 +54,99 @@ export function createFarmer(look: FarmerLook): Actor {
   marker.name = "farmer:target";
   group.add(marker);
 
+  const durations: Partial<Record<FarmerClip, number>> = {};
+  let model: FarmerModel | null = null;
   let facing = 0;
+  let standingSeconds = 0;
+  let lookArounds = 0;
+  let oneShot: { clip: FarmerClip; remaining: number } | null = null;
+  let lastTime = typeof performance !== "undefined" ? performance.now() : 0;
 
-  const apply = (pose: Pose): void => {
-    legFront.rotation.x = pose.legSwing;
-    legBack.rotation.x = -pose.legSwing;
-    armFront.rotation.x = -pose.armSwing;
-    armBack.rotation.x = pose.armSwing;
-    staffPivot.rotation.x = pose.staffAngle - pose.armSwing * 0.4;
-    torso.rotation.x = pose.lean;
-    head.rotation.x = -pose.lean * 0.6;
-    body.position.y = pose.bob;
+  const whenReady = loadFarmerModel(look.heightFt)
+    .then((loaded) => {
+      model = loaded;
+      for (const [name, action] of Object.entries(loaded.actions)) {
+        if (action) durations[name as FarmerClip] = action.getClip().duration;
+      }
+      group.add(loaded.root);
+      apply(REST_POSE, undefined, 0);
+    })
+    .catch((error: unknown) => {
+      // A missing model should be loud in the console but quiet in the farm.
+      console.warn(`The farmer's model did not load from ${look.heightFt} ft of Blender:`, error);
+    });
+
+  const setWeight = (clip: FarmerClip, weight: number): void => {
+    model?.actions[clip]?.setEffectiveWeight(weight);
   };
-  apply(REST_POSE);
+
+  const playOnce = (clip: FarmerClip): void => {
+    const action = model?.actions[clip];
+    if (!action) return;
+    action.reset();
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+    action.setEffectiveWeight(1);
+    action.paused = false;
+    action.play();
+    oneShot = { clip, remaining: action.getClip().duration };
+  };
+
+  const apply = (pose: Pose, motion: ActorMotion | undefined, dt: number): void => {
+    if (!model) return;
+    const blend = blendFor(motion, look.speedFtPerSec);
+
+    if (oneShot) {
+      oneShot.remaining -= dt;
+      if (oneShot.remaining > 0) {
+        setWeight("Idle", 0);
+        setWeight("Walk", 0);
+        setWeight("Run", 0);
+        setWeight(oneShot.clip, 1);
+        return;
+      }
+      setWeight(oneShot.clip, 0);
+      oneShot = null;
+    }
+
+    const standing = isStanding(pose, motion);
+    standingSeconds = standing ? standingSeconds + dt : 0;
+    if (!standing) lookArounds = 0;
+
+    // Standing around he looks about now and then, rather than freezing.
+    if (standing && dueForLookAround(standingSeconds, lookArounds)) {
+      lookArounds += 1;
+      playOnce("LookAround");
+      return;
+    }
+
+    setWeight("Idle", blend.idle);
+    setWeight("Walk", blend.walk);
+    setWeight("Run", blend.run);
+
+    // Scrub the cycle by the phase the app computed from ground covered: the
+    // feet stay planted whatever the walking speed is.
+    for (const clip of ["Walk", "Run"] as const) {
+      const action = model.actions[clip];
+      if (!action) continue;
+      action.paused = true;
+      const duration = action.getClip().duration;
+      action.time = blend.phase * duration;
+    }
+  };
+
+  const tick = (): number => {
+    const now = typeof performance !== "undefined" ? performance.now() : lastTime;
+    const dt = Math.min(Math.max((now - lastTime) / 1000, 0), 0.1);
+    lastTime = now;
+    return dt;
+  };
 
   return {
     mesh: group,
     marker,
+    whenReady,
+    durations,
     sync(xFt, yFt) {
       group.position.set(xFt, 0, yFt);
     },
@@ -158,27 +154,31 @@ export function createFarmer(look: FarmerLook): Actor {
       facing = radians;
       group.rotation.y = radians;
     },
-    animate(pose) {
-      apply(pose);
+    animate(pose, motion) {
+      const dt = tick();
+      apply(pose, motion, dt);
+      model?.mixer.update(dt);
     },
+    playOnce,
     setTargetMarker(target) {
       if (!target) {
         marker.visible = false;
         return;
       }
-      marker.position.set(target.x, 0.12, target.y);
+      marker.position.set(target.x, 0, target.y);
       marker.visible = true;
     },
     dispose() {
-      group.traverse((object) => {
-        if (!(object instanceof THREE.Mesh)) return;
-        object.geometry.dispose();
-        const entry = object.material;
-        if (Array.isArray(entry)) entry.forEach((one) => one.dispose());
-        else entry.dispose();
-      });
+      model?.dispose();
+      model = null;
+      marker.geometry.dispose();
+      const material = marker.material;
+      if (Array.isArray(material)) material.forEach((one) => one.dispose());
+      else material.dispose();
       void facing;
       group.clear();
     },
   };
 }
+
+export type { ActorMotion, FarmerClip };

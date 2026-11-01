@@ -12,6 +12,8 @@ import {
   zoomAfterWheel,
 } from "./camera";
 import { advancePhase, easeAmplitude, easeFacing, gaitPose, REST_POSE } from "./gait";
+import { createInspector, inspectSpec, sunAzimuth } from "./render/farmer-inspect";
+import { clipForArrival } from "./render/farmer-motion";
 import { buildMoveGrid, findRoute, remainingFt } from "./move";
 import { createHectareView, type HectareView, type ViewMode } from "./render/view";
 import { tourAt, tourDuration } from "./tour";
@@ -432,6 +434,9 @@ export function startHectare(): void {
       hud.setPath(pathText(), "none");
       hud.setMessage(`Arrived at ${destination}.`, "ok");
       hud.setPlace(placeAt(world, walker.position));
+      // He does what the place is for: feeds at the goshala, waters the beds,
+      // picks in the orchard. The rig has a clip for each.
+      view.actor.playOnce(clipForArrival(zoneAt(world, walker.position)?.id));
     } else if (walker.route) {
       hud.setPath(pathText(), "route");
     }
@@ -445,8 +450,14 @@ export function startHectare(): void {
     gaitAmplitude = easeAmplitude(gaitAmplitude, walker.route ? 1 : 0, dt, 6);
     view.actor.sync(walker.position.x, walker.position.y);
     view.actor.setFacing(facing);
-    view.actor.animate(gaitPose(gaitPhase, gaitAmplitude));
+    view.actor.animate(gaitPose(gaitPhase, gaitAmplitude), {
+      phase: gaitPhase,
+      amplitude: gaitAmplitude,
+      speedFtPerSec: world.farmer.speedFtPerSec,
+    });
     view.setFollowTarget(walker.position.x, walker.position.y, facing + (orbitDeg * Math.PI) / 180);
+
+    if (inspector) inspector.frame(view.actor, walker.position, now / 1000);
 
     view.render(now / 1000);
     if (tour?.record) compositor.frame(tour.caption, tour.progress);
@@ -454,6 +465,18 @@ export function startHectare(): void {
   };
 
   /* -------------------------------- start -------------------------------- */
+
+  // `?inspect=farmer` turns the page into a stills rig for the character: see
+  // render/farmer-inspect.ts. It replaces the walking animation, nothing else.
+  const inspectorRequest = inspectSpec(window.location.search);
+  const inspector = inspectorRequest
+    ? createInspector(
+        inspectorRequest,
+        view.setFollowTarget,
+        view.setFollowDistance,
+        sunAzimuth(world.parcel.widthFt, world.parcel.depthFt),
+      )
+    : null;
 
   view.actor.sync(walker.position.x, walker.position.y);
   view.actor.animate(REST_POSE);
