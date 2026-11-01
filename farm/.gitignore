@@ -1,3 +1,6 @@
 node_modules
 dist
 coverage
+
+# Blender writes a .blend1 backup beside every save.
+*.blend1

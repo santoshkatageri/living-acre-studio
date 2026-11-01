@@ -8,7 +8,7 @@ glTF, and driven by the farm's own walk cycle.
 | | |
 | --- | --- |
 | Source | `farm/assets/character/farmer.blend` |
-| Mesh | `farm/public/models/farmer.glb` (one skinned mesh, 22 bones, 9 clips) |
+| Mesh | `farm/public/models/farmer.glb` (one skinned mesh, 22 bones, 9 clips, 690 kB) |
 | Builder | `farm/scripts/character/build_farmer.py` |
 | Loading | `farm/src/hectare/render/farmer-model.ts` |
 | Animation | `farm/src/hectare/render/farmer-motion.ts`, `farm/src/hectare/render/actor.ts` |
@@ -20,8 +20,8 @@ A young adult village farmer: a red pagdi wound three and a half times, large
 brown eyes under heavy brows, a black handlebar moustache, a cream kurta with
 rolled sleeves and a buttoned placket, a white dhoti with pressed folds, a green
 stole knotted at the throat, and brown leather sandals. Stylised and low-poly —
-about 13.7 k triangles and 19 flat materials, no textures and no texture baking,
-which is what keeps the download at 650 kB and the materials crisp at the
+about 14.7 k triangles and 19 flat materials, no textures and no texture baking,
+which is what keeps the download at 690 kB and the materials crisp at the
 distance the farm camera sits.
 
 He faces **+Z** and is **1.72 m** tall in the file. The farm works in feet, so
@@ -32,6 +32,34 @@ It is a real mesh on a real skeleton — every view in `reports/character/` is a
 screenshot of the running app, never an image on a plane. The test suite asserts
 exactly that: one `SkinnedMesh`, at least twenty bones, skin weights on every
 vertex, and a nine-clip animation set.
+
+## What changed in the polish pass
+
+The first usable pass was stiff in four places; all four were geometry, not
+taste, and all four are fixed:
+
+- **The neck was a pole.** The head sat on 90 mm of exposed neck and appeared to
+  float forward of the shoulders. The neck is now shorter and thicker, it leans
+  back into the spine, and a pair of trapezius masses slope from it to the
+  shoulders.
+- **The hands were wrong.** The palm was 28 mm wide across X while the four
+  fingers spread 48 mm across it, so the fingers overhung the palm and the hand
+  read as a stump. The hand is rebuilt: 74 mm across, 36 mm thick, with the
+  fingers inside that width under a knuckle line, and the thumb turned in.
+- **The shoulders were pads.** The sleeve was a near-constant tube capped with a
+  dome, so it perched on the yoke. The sleeve now tapers into the yoke, which
+  carries the shoulder line.
+- **The stole was three strips.** It is now a collar that sits on the shoulders
+  and is deep enough front to back to read side on, with square-cut ends.
+
+Two more, found by looking rather than by reasoning: the dhoti was *wider* than
+the kurta where the hem crossed it, so it punched through the pleats as a white
+notch; and the back of the kurta was an unbroken slab, now given the yoke seam a
+real one has.
+
+One deliberate reversal: the head was briefly scaled to 1.10 for readability,
+which made it 0.52 of shoulder width — a child's ratio, and the brief forbids
+that. It is back at 0.38, and the shorter neck does the readability work instead.
 
 ## The rig
 

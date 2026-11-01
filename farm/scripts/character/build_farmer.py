@@ -304,6 +304,18 @@ def apply_modifiers(obj):
     obj.data = mesh
 
 
+def scale_parts(parts, pivot, factor):
+    """Scale a group of finished parts about a pivot, in place.
+
+    Used for the head: growing it after it is built keeps every eyebrow, lash and
+    fold in proportion, instead of nudging a hundred hand-placed coordinates.
+    """
+    matrix = (Matrix.Translation(Vector(pivot)) @ Matrix.Scale(factor, 4)
+              @ Matrix.Translation(-Vector(pivot)))
+    for part in parts:
+        part["object"].data.transform(matrix)
+
+
 def apply_transform(obj):
     obj.data.transform(obj.matrix_basis)
     obj.matrix_basis = Matrix.Identity(4)
@@ -545,8 +557,14 @@ def build_head():
     register(ellipsoid("hair_back", (0.086, 0.070, 0.075), (0, 0.030, HEAD_Z + 0.006), 12, 16),
              "hair", HEAD_BONES, rigid=True)
     # Neck: short and thick, sunk into the collar.
-    register(tube("neck", (0, 0, NECK_Z - 0.10), (0, 0.004, CHIN_Z - 0.012), 0.058, 0.052, 14),
-             "skin", {"neck": 0.85, "head": 0.45, "chest": 0.2})
+    register(tube("neck", (0, -0.004, NECK_Z - 0.14), (0, 0.012, CHIN_Z - 0.030), 0.062, 0.058, 16),
+             "skin", {"neck": 0.85, "head": 0.45, "chest": 0.25})
+    # The trapezius: the slope from neck to shoulder that stops the head looking
+    # balanced on a stick.
+    for side in (1, -1):
+        register(ellipsoid(f"trapezius_{'L' if side > 0 else 'R'}", (0.062, 0.052, 0.034),
+                           (side * 0.086, 0.006, SHOULDER_Z - 0.028), 10, 14),
+                 "skin", {"neck": 0.45, "chest": 0.6})
     # Ears, tucked against the skull and behind the jaw line.
     for side in (1, -1):
         label = "L" if side > 0 else "R"
@@ -603,8 +621,8 @@ def build_head():
     register(loft("nose", nose_rings, 12), "skin", HEAD_BONES, rigid=True)
 
     # The moustache: one handlebar sweeping across the lip, tips curling up.
-    register(ellipsoid("moustache_core", (0.022, 0.014, 0.012),
-                       (0, face_y(0, MOUTH_Z + 0.022) - 0.007, MOUTH_Z + 0.023), 8, 12),
+    register(ellipsoid("moustache_core", (0.025, 0.016, 0.014),
+                       (0, face_y(0, MOUTH_Z + 0.022) - 0.008, MOUTH_Z + 0.022), 8, 12),
              "hair", HEAD_BONES, rigid=True)
     for side in (1, -1):
         label = "L" if side > 0 else "R"
@@ -612,12 +630,12 @@ def build_head():
         mid = tube(f"moustache_mid_{label}",
                    (side * 0.008, face_y(side * 0.008, MOUTH_Z + 0.024) - 0.008, MOUTH_Z + 0.024),
                    (mid_x, face_y(mid_x, MOUTH_Z + 0.022) - 0.006, MOUTH_Z + 0.022),
-                   0.0145, 0.0105, 10)
+                   0.0165, 0.0120, 10)
         register(mid, "hair", HEAD_BONES, rigid=True)
         tip = tube(f"moustache_tip_{label}",
                    (mid_x - side * 0.004, face_y(mid_x, MOUTH_Z + 0.022) - 0.007, MOUTH_Z + 0.022),
-                   (tip_x, face_y(tip_x, MOUTH_Z + 0.036) - 0.003, MOUTH_Z + 0.036),
-                   0.0115, 0.0035, 8)
+                   (tip_x, face_y(tip_x, MOUTH_Z + 0.040) - 0.003, MOUTH_Z + 0.040),
+                   0.0130, 0.0040, 8)
         register(tip, "hair", HEAD_BONES, rigid=True)
 
     # Mouth: a thin, closed smile.
@@ -681,14 +699,14 @@ def build_turban():
 
     # A tail of cloth falling behind his neck: the fold that says "turban".
     tail = band("turban_tail",
-                [(0.050, 0.078, top - 0.020), (0.070, 0.096, bottom + 0.046),
-                 (0.066, 0.104, bottom - 0.020), (0.050, 0.100, bottom - 0.070)],
-                (0.056, 0.062, 0.066, 0.058), 0.013, up=(0, 1, 0))
+                [(0.034, 0.086, top - 0.030), (0.058, 0.100, bottom + 0.040),
+                 (0.062, 0.104, bottom - 0.026), (0.052, 0.098, bottom - 0.078)],
+                (0.050, 0.058, 0.062, 0.054), 0.013, up=(0, 1, 0))
     register(tail, "turban_fold", {"head": 0.85, "neck": 0.15}, rigid=True)
     tail_tip = band("turban_tail_tip",
-                    [(0.050, 0.100, bottom - 0.068), (0.040, 0.094, bottom - 0.108),
-                     (0.024, 0.086, bottom - 0.136)],
-                    (0.056, 0.050, 0.030), 0.011, up=(0, 1, 0))
+                    [(0.052, 0.098, bottom - 0.074), (0.046, 0.092, bottom - 0.112),
+                     (0.034, 0.084, bottom - 0.140)],
+                    (0.054, 0.046, 0.026), 0.011, up=(0, 1, 0))
     register(tail_tip, "turban", {"head": 0.6, "neck": 0.3, "chest": 0.1}, rigid=True)
 
     # Tip the whole thing forward a few degrees: a turban sits low over the
@@ -707,12 +725,18 @@ def build_body():
                   squash=(1.0, KURTA_DEPTH))
     register(kurta, "kurta", TORSO_BONES)
     # Collar: a narrow stand around the neck.
-    register(lathe("kurta_collar", [(1.410, 0.074), (1.448, 0.068), (1.468, 0.060)],
+    register(lathe("kurta_collar", [(1.386, 0.076), (1.420, 0.070), (1.440, 0.062)],
                    segments=20, squash=(1.0, 0.94)), "kurta_shade", {"chest": 0.7, "neck": 0.6})
     # The shoulder yoke: one wide, shallow mass across the top of the chest so
     # the sleeves grow out of the kurta instead of being pinned on.
-    register(ellipsoid("kurta_yoke", (0.198, 0.140, 0.078), (0, 0, 1.362), 12, 20),
+    register(ellipsoid("kurta_yoke", (0.202, 0.150, 0.070), (0, 0, 1.352), 12, 20),
              "kurta", {"chest": 1.0})
+    # The back yoke seam, where a kurta's shoulder panel is joined.
+    yoke_seam = band("kurta_back_seam",
+                     [(-0.150, 0.086, 1.318), (-0.075, 0.130, 1.318), (0, 0.138, 1.318),
+                      (0.075, 0.130, 1.318), (0.150, 0.086, 1.318)],
+                     0.010, 0.005, up=(0, 1, 0))
+    register(yoke_seam, "kurta_shade", {"chest": 1.0})
     # Placket: the buttoned seam down the chest, on the surface.
     placket = band("kurta_placket",
                    [(0, kurta_surface(0, 1.404, 0.004), 1.404),
@@ -745,9 +769,12 @@ def build_body():
     register(tuck, "dhoti", {"hips": 1.0})
 
     # Stole: round the neck, over both shoulders, hanging down the chest.
-    register(lathe("scarf_ring", [(1.428, 0.078), (1.452, 0.082), (1.474, 0.076)],
-                   segments=22, pleats=6, pleat_depth=0.025, squash=(1.0, 0.92)),
-             "scarf", {"neck": 0.9, "chest": 0.3})
+    # The stole round the neck: a collar that sits on the shoulders and is
+    # deep enough front to back that it does not vanish side on.
+    register(lathe("scarf_ring", [(1.372, 0.098), (1.398, 0.104), (1.424, 0.100),
+                                  (1.442, 0.086)],
+                   segments=26, pleats=8, pleat_depth=0.05, squash=(1.0, 0.90)),
+             "scarf", {"neck": 0.5, "chest": 0.75})
     register(ellipsoid("scarf_knot", (0.024, 0.020, 0.022), (0.044, -0.058, 1.432), 8, 12),
              "scarf_dark", {"chest": 1.0, "neck": 0.3}, rigid=True)
     for side in (1, -1):
@@ -756,14 +783,14 @@ def build_body():
         for z, x in ((1.418, 0.048), (1.372, 0.080), (1.310, 0.094), (1.220, 0.098),
                      (1.140, 0.096), (1.060, 0.092), (1.020, 0.088), (0.995, 0.086)):
             path.append((side * x, kurta_surface(x, z, 0.012), z))
-        widths = (0.044, 0.062, 0.068, 0.070, 0.068, 0.064, 0.048, 0.026)
+        widths = (0.046, 0.063, 0.069, 0.071, 0.070, 0.068, 0.062, 0.050)
         tail = band(f"scarf_tail_{label}", path, widths, 0.013, up=(0, -1, 0))
         register(tail, "scarf" if side > 0 else "scarf_dark", {"chest": 0.85, "spine": 0.35})
     # The long end down his back.
     back = band("scarf_back",
                 [(0.040, 0.062, 1.442), (0.058, 0.098, 1.372), (0.066, 0.122, 1.280),
                  (0.062, 0.130, 1.180), (0.056, 0.128, 1.090), (0.050, 0.126, 1.030)],
-                (0.046, 0.064, 0.070, 0.072, 0.068, 0.048), 0.012, up=(0, 1, 0))
+                (0.048, 0.066, 0.070, 0.072, 0.070, 0.058), 0.013, up=(0, 1, 0))
     register(back, "scarf_dark", {"chest": 0.85, "spine": 0.3})
 
 
@@ -776,9 +803,9 @@ def build_arms():
                       0.048, 0.042, 12), "skin", {f"upper_arm.{label}": 1.0, "chest": 0.2})
         # Sleeve: the kurta's short sleeve, rolled at the cuff.
         sleeve = lathe(f"kurta_sleeve_{label}",
-                       [(1.150, 0.058), (1.210, 0.062), (1.268, 0.066),
-                        (1.320, 0.068), (1.360, 0.068), (1.392, 0.058),
-                        (1.408, 0.030)],
+                       [(1.150, 0.058), (1.210, 0.061), (1.262, 0.064),
+                        (1.310, 0.064), (1.348, 0.060), (1.376, 0.048),
+                        (1.392, 0.026)],
                        segments=16)
         sleeve.data.transform(Matrix.Translation((x + side * 0.004, 0, 0)))
         register(sleeve, "kurta", {f"upper_arm.{label}": 1.0, "chest": 0.35})
@@ -789,18 +816,24 @@ def build_arms():
         # Bare forearm below the rolled cuff.
         register(tube(f"forearm_{label}", (x + side * 0.004, 0, 1.175), (x + side * 0.018, 0, 0.898),
                       0.042, 0.031, 12), "skin", {f"forearm.{label}": 1.0, f"upper_arm.{label}": 0.25})
-        # Palm, fingers and thumb: a hand, not a paddle.
-        palm = rounded_box(f"hand_{label}", (0.028, 0.056, 0.076),
-                           (x + side * 0.022, -0.004, 0.862), 0.013)
+        # The hand, hanging. It is wide across X and thin front-to-back, which
+        # is the shape of a hand at rest; the fingers sit inside that width.
+        wrist = x + side * 0.016
+        palm = rounded_box(f"hand_{label}", (0.074, 0.036, 0.072), (wrist, -0.004, 0.866), 0.014)
         register(palm, "skin", {f"hand.{label}": 1.0}, rigid=True)
+        # Knuckle line, so the fingers start from a form rather than a cut.
+        register(ellipsoid(f"knuckles_{label}", (0.036, 0.020, 0.016), (wrist, -0.008, 0.836), 8, 12),
+                 "skin", {f"hand.{label}": 1.0}, rigid=True)
         for finger in range(4):
-            fx = (finger - 1.5) * 0.016
-            start = (x + side * 0.022 + fx, -0.026, 0.824)
-            end = (x + side * 0.024 + fx * 1.12, -0.040, 0.770)
-            register(tube(f"finger_{label}_{finger}", start, end, 0.0078, 0.0060, 8),
+            fx = (finger - 1.5) * 0.018
+            length = 0.050 - abs(finger - 1.2) * 0.004
+            start = (wrist + fx, -0.012, 0.834)
+            end = (wrist + fx * 1.06, -0.026, 0.834 - length)
+            register(tube(f"finger_{label}_{finger}", start, end, 0.0082, 0.0062, 8),
                      "skin", {f"hand.{label}": 1.0}, rigid=True)
-        register(tube(f"thumb_{label}", (x + side * 0.010, -0.026, 0.884),
-                      (x + side * 0.008, -0.040, 0.842), 0.011, 0.0075, 8),
+        # The thumb: forward of the palm and turned in, the way a resting hand is.
+        register(tube(f"thumb_{label}", (wrist - side * 0.026, -0.012, 0.892),
+                      (wrist - side * 0.020, -0.036, 0.856), 0.0115, 0.0078, 8),
                  "skin", {f"hand.{label}": 1.0}, rigid=True)
 
 
