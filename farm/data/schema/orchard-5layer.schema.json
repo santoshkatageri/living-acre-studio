@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "orchard-5layer.schema.json",
+  "title": "Go Dharaa five-layer orchard (draft, all values PLACEHOLDER)",
+  "description": "Structural schema only. Spatial rules (inside the orchard, spacing, trunk gaps, alleys) are enforced by the plan builder in step 2.",
+  "type": "object",
+  "required": ["schema_version", "placeholder", "note", "needs_review", "zone_id", "zone_size_ft", "entrance", "seed", "min_trunk_gap_ft", "alleys", "layers", "drip"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "orchard-5layer-draft" },
+    "placeholder": { "type": "boolean" },
+    "note": { "type": "string", "minLength": 20 },
+    "needs_review": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "zone_id": { "type": "string", "pattern": "^[A-Za-z0-9_]+$" },
+    "zone_size_ft": {
+      "type": "object",
+      "required": ["w_ft", "d_ft"],
+      "additionalProperties": false,
+      "properties": {
+        "w_ft": { "type": "number", "exclusiveMinimum": 0 },
+        "d_ft": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "entrance": {
+      "type": "object",
+      "required": ["edge", "offset"],
+      "additionalProperties": false,
+      "properties": {
+        "edge": { "enum": ["north", "south", "east", "west"] },
+        "offset": { "enum": ["centre", "left", "right"] }
+      }
+    },
+    "seed": { "type": "integer", "minimum": 0 },
+    "min_trunk_gap_ft": { "type": "number", "exclusiveMinimum": 0 },
+    "alleys": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "dir", "width_ft"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_]+$" },
+          "dir": { "enum": ["N-S", "E-W"] },
+          "x_ft": { "type": "number", "minimum": 0 },
+          "y_ft": { "type": "number", "minimum": 0 },
+          "width_ft": { "type": "number", "exclusiveMinimum": 0 }
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "height_ft", "species"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "enum": ["L1", "L2", "L3", "L4", "L5"] },
+          "name": {
+            "type": "object",
+            "required": ["en", "hi", "kn"],
+            "additionalProperties": false,
+            "properties": {
+              "en": { "type": "string", "minLength": 1 },
+              "hi": { "type": "string", "minLength": 1 },
+              "kn": { "type": "string", "minLength": 1 }
+            }
+          },
+          "height_ft": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "number", "minimum": 0 }
+          },
+          "visual_height_cap_ft": { "type": "number", "exclusiveMinimum": 0 },
+          "same_layer_min_spacing_ft": { "type": "number", "exclusiveMinimum": 0 },
+          "target_count": { "type": "integer", "minimum": 0 },
+          "trunk_solid_radius_ft": { "type": "number", "exclusiveMinimum": 0 },
+          "style": { "enum": ["bed_strips", "cover_patches"] },
+          "bed_width_ft": { "type": "number", "exclusiveMinimum": 0 },
+          "target_beds": { "type": "integer", "minimum": 0 },
+          "target_patches": { "type": "integer", "minimum": 0 },
+          "species": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "name", "height_ft", "crown_radius_ft"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string", "pattern": "^[A-Za-z0-9_]+$" },
+                "name": {
+                  "type": "object",
+                  "required": ["en", "hi", "kn"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "en": { "type": "string", "minLength": 1 },
+                    "hi": { "type": "string", "minLength": 1 },
+                    "kn": { "type": "string", "minLength": 1 }
+                  }
+                },
+                "height_ft": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": { "type": "number", "minimum": 0 }
+                },
+                "crown_radius_ft": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": { "type": "number", "exclusiveMinimum": 0 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "drip": {
+      "type": "object",
+      "required": ["mainline", "lateral_rule", "decorative_only"],
+      "additionalProperties": false,
+      "properties": {
+        "mainline": {
+          "type": "object",
+          "required": ["along", "note"],
+          "additionalProperties": false,
+          "properties": {
+            "along": { "enum": ["west_edge", "east_edge", "north_edge", "south_edge"] },
+            "note": { "type": "string" }
+          }
+        },
+        "lateral_rule": { "type": "string" },
+        "decorative_only": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -21,6 +21,47 @@ farm/
   scripts/report-network.ts  prints the network, routes and ratios
 ```
 
+## The hectare world (v2), step 1: data, schema, validator
+
+Two inputs are saved verbatim and loaded at build time (not fetched):
+
+- `data/farm-layout-v2.json` (22 zones, 9 gravel paths, 4 channels, 100 m square)
+- `data/orchard-5layer.json` (five layers, 3 alleys, own seed)
+
+Both are PLACEHOLDER: zones eyeballed from the reference blueprint, species and
+counts from general knowledge. The orchard file also flags `names.hi` and
+`names.kn` as `needs_review`.
+
+**World switch:** `sim_overrides.overrides.world` is `"hectare_v2"` (the default
+the brief asks for); `"acre_v1"` is the other accepted value. `WORLD_ID` and
+`parseWorldId()` in `src/sim/canon.ts` read and refuse values. The acre world is
+still the one the app builds (`WORLD`), so the 157 acre tests keep passing; the
+hectare world becomes the app's world in step 3, when the renderer can draw it.
+
+**Validator** (`scripts/validate-layout.ts`, logic in `src/sim/layout.ts` and a
+small JSON Schema subset in `src/sim/json-schema.ts` — no new dependency):
+
+```
+clean: 22 zones, no violations
+50 m..95 m interior honoured by every zone; no zone overlaps a zone or a path
+four crop plots 22 x 24 m; ids unique; every declared *_ft column equals m x 3.28084
+orchard alleys and the south-centre entrance inside the orchard; L1..L5 once each
+```
+
+Four faults are injected **in memory** (the files are never rewritten, so the
+revert is the clean second run) and each is caught by its own check:
+
+| fault | check that caught it |
+| --- | --- |
+| two zones overlapping | `zone.overlap` (plot_sunflower / plot_groundnut, 216 m2) |
+| a zone outside the interior | `zone.interior` (solar_dryer x 92..101 m) and `zone.path_overlap` |
+| a parcel that is not 100 m | `parcel.square` (side_m 90) |
+| an alley outside the orchard | `alley.inside` (ns_2 x 80..85 ft of 82.02) |
+
+`reports/step1-layout.json` carries per-zone areas (m2 and ft2), totals per kind
+(8 building, 4 crop plot, 3 livestock, 1 orchard, 3 rotational strip,
+1 vegetables, 1 water, 1 yard), the empty violation list and the fault results.
+
 ## The path network (M4)
 
 One shared graph, built from canon geometry. **61 nodes, 63 edges, 6 junctions,

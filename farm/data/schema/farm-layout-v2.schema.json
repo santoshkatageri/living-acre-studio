@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "farm-layout-v2.schema.json",
+  "title": "Go Dharaa farm layout v2 (hectare, 100 m square)",
+  "description": "Structural schema only. Cross-checks (parcel square, interior, overlaps, crop plot sizes, orchard alleys) live in src/sim/layout.ts and are run by scripts/validate-layout.ts.",
+  "type": "object",
+  "required": ["schema_version", "units_note", "parcel", "belt", "zones", "paths", "channels", "crops_in_plots", "open_decisions"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "farm-layout-v2-draft" },
+    "units_note": { "type": "string", "minLength": 10 },
+    "source": { "type": "string" },
+    "parcel": {
+      "type": "object",
+      "required": ["side_m", "side_ft", "area_m2", "gate"],
+      "additionalProperties": false,
+      "properties": {
+        "side_m": { "type": "number", "exclusiveMinimum": 0 },
+        "side_ft": { "type": "number", "exclusiveMinimum": 0 },
+        "area_m2": { "type": "number", "exclusiveMinimum": 0 },
+        "gate": {
+          "type": "object",
+          "required": ["side", "x_m", "y_m", "gap_m"],
+          "additionalProperties": false,
+          "properties": {
+            "side": { "enum": ["north", "south", "east", "west"] },
+            "x_m": { "type": "number", "minimum": 0 },
+            "y_m": { "type": "number", "minimum": 0 },
+            "gap_m": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
+      }
+    },
+    "belt": {
+      "type": "object",
+      "required": ["width_m", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "width_m": { "type": "number", "exclusiveMinimum": 0 },
+        "note": { "type": "string" }
+      }
+    },
+    "zones": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id", "ref", "label", "kind", "walkable", "placeholder",
+          "x_m", "y_m", "w_m", "d_m", "x_ft", "y_ft", "w_ft", "d_ft"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_]+$" },
+          "ref": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "kind": {
+            "enum": ["crop_plot", "rotational_strip", "orchard", "vegetables", "livestock", "water", "building", "yard"]
+          },
+          "walkable": { "type": "boolean" },
+          "placeholder": { "type": "boolean" },
+          "x_m": { "type": "number", "minimum": 0 },
+          "y_m": { "type": "number", "minimum": 0 },
+          "w_m": { "type": "number", "exclusiveMinimum": 0 },
+          "d_m": { "type": "number", "exclusiveMinimum": 0 },
+          "x_ft": { "type": "number", "minimum": 0 },
+          "y_ft": { "type": "number", "minimum": 0 },
+          "w_ft": { "type": "number", "exclusiveMinimum": 0 },
+          "d_ft": { "type": "number", "exclusiveMinimum": 0 }
+        }
+      }
+    },
+    "paths": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "x_m", "y_m", "w_m", "d_m", "width_m"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_]+$" },
+          "x_m": { "type": "number", "minimum": 0 },
+          "y_m": { "type": "number", "minimum": 0 },
+          "w_m": { "type": "number", "exclusiveMinimum": 0 },
+          "d_m": { "type": "number", "exclusiveMinimum": 0 },
+          "width_m": { "type": "number", "exclusiveMinimum": 0 }
+        }
+      }
+    },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "x_m", "y_m", "w_m", "d_m"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_]+$" },
+          "x_m": { "type": "number", "minimum": 0 },
+          "y_m": { "type": "number", "minimum": 0 },
+          "w_m": { "type": "number", "exclusiveMinimum": 0 },
+          "d_m": { "type": "number", "exclusiveMinimum": 0 }
+        }
+      }
+    },
+    "crops_in_plots": {
+      "type": "object",
+      "required": ["plot_wheat", "plot_jowar", "plot_sunflower", "plot_groundnut"],
+      "additionalProperties": { "type": "string" }
+    },
+    "open_decisions": { "type": "array", "items": { "type": "string" } }
+  }
+}

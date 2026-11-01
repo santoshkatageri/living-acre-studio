@@ -1,0 +1,461 @@
+{
+ "schema_version": "orchard-5layer-draft",
+ "placeholder": true,
+ "note": "ALL species, heights, counts and spacings are PLACEHOLDERS from general knowledge. They must be reviewed by a local horticulture officer / KVK before any public release. Hindi (hi) and Kannada (kn) names are drafts: needs_review.",
+ "needs_review": [
+  "names.hi",
+  "names.kn",
+  "species_list",
+  "heights",
+  "spacing",
+  "counts"
+ ],
+ "zone_id": "orchard",
+ "zone_size_ft": {
+  "w_ft": 82.02,
+  "d_ft": 131.23
+ },
+ "entrance": {
+  "edge": "south",
+  "offset": "centre"
+ },
+ "seed": 20261101,
+ "min_trunk_gap_ft": 5,
+ "alleys": [
+  {
+   "id": "ns_1",
+   "dir": "N-S",
+   "x_ft": 27,
+   "width_ft": 5
+  },
+  {
+   "id": "ns_2",
+   "dir": "N-S",
+   "x_ft": 55,
+   "width_ft": 5
+  },
+  {
+   "id": "ew_1",
+   "dir": "E-W",
+   "y_ft": 65,
+   "width_ft": 5
+  }
+ ],
+ "layers": [
+  {
+   "id": "L1",
+   "name": {
+    "en": "Upper canopy",
+    "hi": "ऊपरी कैनोपी",
+    "kn": "ಮೇಲಿನ ಛಾವಣಿ"
+   },
+   "height_ft": [
+    30,
+    50
+   ],
+   "visual_height_cap_ft": 28,
+   "same_layer_min_spacing_ft": 30,
+   "target_count": 8,
+   "trunk_solid_radius_ft": 1.2,
+   "species": [
+    {
+     "id": "mango",
+     "name": {
+      "en": "Mango",
+      "hi": "आम",
+      "kn": "ಮಾವು"
+     },
+     "height_ft": [
+      30,
+      50
+     ],
+     "crown_radius_ft": [
+      14,
+      20
+     ]
+    },
+    {
+     "id": "coconut",
+     "name": {
+      "en": "Coconut",
+      "hi": "नारियल",
+      "kn": "ತೆಂಗು"
+     },
+     "height_ft": [
+      35,
+      50
+     ],
+     "crown_radius_ft": [
+      10,
+      14
+     ]
+    },
+    {
+     "id": "jackfruit",
+     "name": {
+      "en": "Jackfruit",
+      "hi": "कटहल",
+      "kn": "ಹಲಸು"
+     },
+     "height_ft": [
+      30,
+      45
+     ],
+     "crown_radius_ft": [
+      12,
+      18
+     ]
+    }
+   ]
+  },
+  {
+   "id": "L2",
+   "name": {
+    "en": "Sub-canopy",
+    "hi": "उप-कैनोपी",
+    "kn": "ಉಪ-ಛಾವಣಿ"
+   },
+   "height_ft": [
+    8,
+    25
+   ],
+   "visual_height_cap_ft": 20,
+   "same_layer_min_spacing_ft": 14,
+   "target_count": 16,
+   "trunk_solid_radius_ft": 0.7,
+   "species": [
+    {
+     "id": "banana",
+     "name": {
+      "en": "Banana",
+      "hi": "केला",
+      "kn": "ಬಾಳೆ"
+     },
+     "height_ft": [
+      10,
+      18
+     ],
+     "crown_radius_ft": [
+      5,
+      7
+     ]
+    },
+    {
+     "id": "papaya",
+     "name": {
+      "en": "Papaya",
+      "hi": "पपीता",
+      "kn": "ಪಪ್ಪಾಯಿ"
+     },
+     "height_ft": [
+      8,
+      20
+     ],
+     "crown_radius_ft": [
+      4,
+      6
+     ]
+    },
+    {
+     "id": "drumstick",
+     "name": {
+      "en": "Drumstick",
+      "hi": "सहजन",
+      "kn": "ನುಗ್ಗೆ"
+     },
+     "height_ft": [
+      10,
+      25
+     ],
+     "crown_radius_ft": [
+      5,
+      8
+     ]
+    }
+   ]
+  },
+  {
+   "id": "L3",
+   "name": {
+    "en": "Middle fruit layer",
+    "hi": "बीच की फल परत",
+    "kn": "ಮಧ್ಯದ ಹಣ್ಣಿನ ಪದರ"
+   },
+   "height_ft": [
+    6,
+    15
+   ],
+   "visual_height_cap_ft": 12,
+   "same_layer_min_spacing_ft": 11,
+   "target_count": 20,
+   "trunk_solid_radius_ft": 0.5,
+   "species": [
+    {
+     "id": "guava",
+     "name": {
+      "en": "Guava",
+      "hi": "अमरूद",
+      "kn": "ಸೀಬೆ"
+     },
+     "height_ft": [
+      8,
+      15
+     ],
+     "crown_radius_ft": [
+      4,
+      6
+     ]
+    },
+    {
+     "id": "sapota",
+     "name": {
+      "en": "Sapota (pruned)",
+      "hi": "चीकू",
+      "kn": "ಚಿಕ್ಕು"
+     },
+     "height_ft": [
+      8,
+      15
+     ],
+     "crown_radius_ft": [
+      5,
+      7
+     ]
+    },
+    {
+     "id": "lemon",
+     "name": {
+      "en": "Lemon",
+      "hi": "नींबू",
+      "kn": "ನಿಂಬೆ"
+     },
+     "height_ft": [
+      6,
+      12
+     ],
+     "crown_radius_ft": [
+      3,
+      5
+     ]
+    },
+    {
+     "id": "pomegranate",
+     "name": {
+      "en": "Pomegranate",
+      "hi": "अनार",
+      "kn": "ದಾಳಿಂಬೆ"
+     },
+     "height_ft": [
+      6,
+      12
+     ],
+     "crown_radius_ft": [
+      3,
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "id": "L4",
+   "name": {
+    "en": "Lower herb and spice layer",
+    "hi": "निचली मसाला/जड़ी परत",
+    "kn": "ಕೆಳಗಿನ ಮಸಾಲೆ ಪದರ"
+   },
+   "height_ft": [
+    1,
+    4
+   ],
+   "style": "bed_strips",
+   "bed_width_ft": 4,
+   "target_beds": 6,
+   "species": [
+    {
+     "id": "turmeric",
+     "name": {
+      "en": "Turmeric",
+      "hi": "हल्दी",
+      "kn": "ಅರಿಶಿನ"
+     },
+     "height_ft": [
+      2,
+      4
+     ],
+     "crown_radius_ft": [
+      1,
+      1.5
+     ]
+    },
+    {
+     "id": "ginger",
+     "name": {
+      "en": "Ginger",
+      "hi": "अदरक",
+      "kn": "ಶುಂಠಿ"
+     },
+     "height_ft": [
+      2,
+      3
+     ],
+     "crown_radius_ft": [
+      1,
+      1.5
+     ]
+    },
+    {
+     "id": "onion",
+     "name": {
+      "en": "Onion",
+      "hi": "प्याज़",
+      "kn": "ಈರುಳ್ಳಿ"
+     },
+     "height_ft": [
+      1,
+      2
+     ],
+     "crown_radius_ft": [
+      0.5,
+      1
+     ]
+    },
+    {
+     "id": "leafy_herbs",
+     "name": {
+      "en": "Leafy herbs",
+      "hi": "पत्तेदार जड़ी-बूटी",
+      "kn": "ಸೊಪ್ಪು"
+     },
+     "height_ft": [
+      1,
+      2
+     ],
+     "crown_radius_ft": [
+      0.5,
+      1
+     ]
+    }
+   ]
+  },
+  {
+   "id": "L5",
+   "name": {
+    "en": "Ground and root layer",
+    "hi": "ज़मीन और जड़ परत",
+    "kn": "ನೆಲ ಮತ್ತು ಬೇರಿನ ಪದರ"
+   },
+   "height_ft": [
+    0,
+    1.5
+   ],
+   "style": "cover_patches",
+   "target_patches": 14,
+   "species": [
+    {
+     "id": "palak",
+     "name": {
+      "en": "Spinach (palak)",
+      "hi": "पालक",
+      "kn": "ಪಾಲಕ್"
+     },
+     "height_ft": [
+      0.3,
+      1
+     ],
+     "crown_radius_ft": [
+      0.5,
+      1
+     ]
+    },
+    {
+     "id": "coriander",
+     "name": {
+      "en": "Coriander",
+      "hi": "धनिया",
+      "kn": "ಕೊತ್ತಂಬರಿ"
+     },
+     "height_ft": [
+      0.5,
+      1.5
+     ],
+     "crown_radius_ft": [
+      0.5,
+      1
+     ]
+    },
+    {
+     "id": "radish",
+     "name": {
+      "en": "Radish",
+      "hi": "मूली",
+      "kn": "ಮೂಲಂಗಿ"
+     },
+     "height_ft": [
+      0.5,
+      1
+     ],
+     "crown_radius_ft": [
+      0.5,
+      1
+     ]
+    },
+    {
+     "id": "carrot",
+     "name": {
+      "en": "Carrot",
+      "hi": "गाजर",
+      "kn": "ಗಜ್ಜರಿ"
+     },
+     "height_ft": [
+      0.5,
+      1
+     ],
+     "crown_radius_ft": [
+      0.5,
+      1
+     ]
+    },
+    {
+     "id": "beet",
+     "name": {
+      "en": "Beetroot",
+      "hi": "चुकंदर",
+      "kn": "ಬೀಟ್‌ರೂಟ್"
+     },
+     "height_ft": [
+      0.5,
+      1
+     ],
+     "crown_radius_ft": [
+      0.5,
+      1
+     ]
+    },
+    {
+     "id": "sweet_potato",
+     "name": {
+      "en": "Sweet potato (cover)",
+      "hi": "शकरकंद",
+      "kn": "ಸಿಹಿಗೆಣಸು"
+     },
+     "height_ft": [
+      0.3,
+      1
+     ],
+     "crown_radius_ft": [
+      1,
+      2
+     ]
+    }
+   ]
+  }
+ ],
+ "drip": {
+  "mainline": {
+   "along": "west_edge",
+   "note": "fed from the lane-side irrigation channel"
+  },
+  "lateral_rule": "one lateral per tree row; emitters every 4 ft",
+  "decorative_only": true
+ }
+}

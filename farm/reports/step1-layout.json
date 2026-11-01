@@ -1,0 +1,452 @@
+{
+ "step": 1,
+ "generated_by": "scripts/validate-layout.ts",
+ "world_switch": "hectare_v2",
+ "inputs": {
+  "data/farm-layout-v2.json": {
+   "utf8_chars": 8217,
+   "sha256": "8940c725277f6667778c56f3071f1b992b0500a021ce84a692ae5680a3ba76be"
+  },
+  "data/orchard-5layer.json": {
+   "utf8_chars": 6943,
+   "sha256": "1d849de2142bd80c775d0ed6c533cf822f2535ffc7dac6a03e9bb544117990ab"
+  }
+ },
+ "parcel": {
+  "side_m": 100,
+  "side_ft": 328.084,
+  "area_m2": 10000,
+  "gate": {
+   "side": "north",
+   "xM": 52.5,
+   "yM": 0,
+   "gapM": 3
+  }
+ },
+ "zone_count": 22,
+ "path_count": 9,
+ "channel_count": 4,
+ "walkable_zones": 10,
+ "zones": [
+  {
+   "id": "plot_wheat",
+   "ref": "A1",
+   "kind": "crop_plot",
+   "walkable": true,
+   "area_m2": 528,
+   "area_ft2": 5683.296,
+   "box_ft": {
+    "x": 16.404,
+    "y": 16.404,
+    "widthFt": 72.178,
+    "depthFt": 78.74
+   }
+  },
+  {
+   "id": "plot_jowar",
+   "ref": "A2",
+   "kind": "crop_plot",
+   "walkable": true,
+   "area_m2": 528,
+   "area_ft2": 5683.296,
+   "box_ft": {
+    "x": 95.144,
+    "y": 16.404,
+    "widthFt": 72.178,
+    "depthFt": 78.74
+   }
+  },
+  {
+   "id": "plot_sunflower",
+   "ref": "A3",
+   "kind": "crop_plot",
+   "walkable": true,
+   "area_m2": 528,
+   "area_ft2": 5683.296,
+   "box_ft": {
+    "x": 16.404,
+    "y": 101.706,
+    "widthFt": 72.178,
+    "depthFt": 78.74
+   }
+  },
+  {
+   "id": "plot_groundnut",
+   "ref": "A4",
+   "kind": "crop_plot",
+   "walkable": true,
+   "area_m2": 528,
+   "area_ft2": 5683.296,
+   "box_ft": {
+    "x": 95.144,
+    "y": 101.706,
+    "widthFt": 72.178,
+    "depthFt": 78.74
+   }
+  },
+  {
+   "id": "rot_pulses",
+   "ref": "B1",
+   "kind": "rotational_strip",
+   "walkable": true,
+   "area_m2": 230,
+   "area_ft2": 2475.675,
+   "box_ft": {
+    "x": 16.404,
+    "y": 190.289,
+    "widthFt": 150.919,
+    "depthFt": 16.404
+   }
+  },
+  {
+   "id": "rot_cereals",
+   "ref": "B2",
+   "kind": "rotational_strip",
+   "walkable": true,
+   "area_m2": 230,
+   "area_ft2": 2475.675,
+   "box_ft": {
+    "x": 16.404,
+    "y": 206.693,
+    "widthFt": 150.919,
+    "depthFt": 16.404
+   }
+  },
+  {
+   "id": "rot_fodder",
+   "ref": "B3",
+   "kind": "rotational_strip",
+   "walkable": true,
+   "area_m2": 230,
+   "area_ft2": 2475.675,
+   "box_ft": {
+    "x": 16.404,
+    "y": 223.097,
+    "widthFt": 150.919,
+    "depthFt": 16.404
+   }
+  },
+  {
+   "id": "orchard",
+   "ref": "C",
+   "kind": "orchard",
+   "walkable": true,
+   "area_m2": 1000,
+   "area_ft2": 10763.944,
+   "box_ft": {
+    "x": 180.446,
+    "y": 16.404,
+    "widthFt": 82.021,
+    "depthFt": 131.234
+   }
+  },
+  {
+   "id": "trellis_veg",
+   "ref": "D",
+   "kind": "vegetables",
+   "walkable": true,
+   "area_m2": 520,
+   "area_ft2": 5597.261,
+   "box_ft": {
+    "x": 269.029,
+    "y": 16.404,
+    "widthFt": 42.651,
+    "depthFt": 131.234
+   }
+  },
+  {
+   "id": "cattle_shed",
+   "ref": "E",
+   "kind": "livestock",
+   "walkable": true,
+   "area_m2": 270,
+   "area_ft2": 2906.274,
+   "box_ft": {
+    "x": 180.446,
+    "y": 160.761,
+    "widthFt": 59.055,
+    "depthFt": 49.213
+   }
+  },
+  {
+   "id": "poultry",
+   "ref": "F",
+   "kind": "livestock",
+   "walkable": false,
+   "area_m2": 135,
+   "area_ft2": 1453.161,
+   "box_ft": {
+    "x": 246.063,
+    "y": 160.761,
+    "widthFt": 29.528,
+    "depthFt": 49.213
+   }
+  },
+  {
+   "id": "goat_pen",
+   "ref": "G",
+   "kind": "livestock",
+   "walkable": false,
+   "area_m2": 135,
+   "area_ft2": 1453.161,
+   "box_ft": {
+    "x": 282.152,
+    "y": 160.761,
+    "widthFt": 29.528,
+    "depthFt": 49.213
+   }
+  },
+  {
+   "id": "fish_pond",
+   "ref": "H",
+   "kind": "water",
+   "walkable": false,
+   "area_m2": 532,
+   "area_ft2": 5726.434,
+   "box_ft": {
+    "x": 16.404,
+    "y": 249.344,
+    "widthFt": 91.864,
+    "depthFt": 62.336
+   }
+  },
+  {
+   "id": "duck_coop_1",
+   "ref": "H1",
+   "kind": "building",
+   "walkable": false,
+   "area_m2": 10.5,
+   "area_ft2": 113.027,
+   "box_ft": {
+    "x": 114.829,
+    "y": 252.625,
+    "widthFt": 11.483,
+    "depthFt": 9.843
+   }
+  },
+  {
+   "id": "duck_coop_2",
+   "ref": "H2",
+   "kind": "building",
+   "walkable": false,
+   "area_m2": 10.5,
+   "area_ft2": 113.027,
+   "box_ft": {
+    "x": 114.829,
+    "y": 269.029,
+    "widthFt": 11.483,
+    "depthFt": 9.843
+   }
+  },
+  {
+   "id": "biogas",
+   "ref": "J",
+   "kind": "building",
+   "walkable": false,
+   "area_m2": 140,
+   "area_ft2": 1506.937,
+   "box_ft": {
+    "x": 131.234,
+    "y": 255.906,
+    "widthFt": 32.808,
+    "depthFt": 45.932
+   }
+  },
+  {
+   "id": "vermicompost",
+   "ref": "K",
+   "kind": "building",
+   "walkable": false,
+   "area_m2": 80,
+   "area_ft2": 861.112,
+   "box_ft": {
+    "x": 183.727,
+    "y": 223.097,
+    "widthFt": 32.808,
+    "depthFt": 26.247
+   }
+  },
+  {
+   "id": "composting",
+   "ref": "K2",
+   "kind": "yard",
+   "walkable": false,
+   "area_m2": 80,
+   "area_ft2": 861.112,
+   "box_ft": {
+    "x": 183.727,
+    "y": 259.186,
+    "widthFt": 32.808,
+    "depthFt": 26.247
+   }
+  },
+  {
+   "id": "tractor_shed",
+   "ref": "T",
+   "kind": "building",
+   "walkable": false,
+   "area_m2": 80,
+   "area_ft2": 861.112,
+   "box_ft": {
+    "x": 246.063,
+    "y": 223.097,
+    "widthFt": 32.808,
+    "depthFt": 26.247
+   }
+  },
+  {
+   "id": "solar_dryer",
+   "ref": "L",
+   "kind": "building",
+   "walkable": false,
+   "area_m2": 108,
+   "area_ft2": 1162.517,
+   "box_ft": {
+    "x": 282.152,
+    "y": 223.097,
+    "widthFt": 29.528,
+    "depthFt": 39.37
+   }
+  },
+  {
+   "id": "farmhouse",
+   "ref": "I",
+   "kind": "building",
+   "walkable": false,
+   "area_m2": 60.97,
+   "area_ft2": 656.295,
+   "box_ft": {
+    "x": 249.344,
+    "y": 272.31,
+    "widthFt": 29.856,
+    "depthFt": 21.982
+   }
+  },
+  {
+   "id": "grain_store",
+   "ref": "I2",
+   "kind": "building",
+   "walkable": false,
+   "area_m2": 40.15,
+   "area_ft2": 432.178,
+   "box_ft": {
+    "x": 285.433,
+    "y": 272.31,
+    "widthFt": 23.95,
+    "depthFt": 18.045
+   }
+  }
+ ],
+ "totals_by_kind": {
+  "building": {
+   "count": 8,
+   "area_m2": 530.12,
+   "area_ft2": 5706.205
+  },
+  "crop_plot": {
+   "count": 4,
+   "area_m2": 2112,
+   "area_ft2": 22733.184
+  },
+  "livestock": {
+   "count": 3,
+   "area_m2": 540,
+   "area_ft2": 5812.596
+  },
+  "orchard": {
+   "count": 1,
+   "area_m2": 1000,
+   "area_ft2": 10763.944
+  },
+  "rotational_strip": {
+   "count": 3,
+   "area_m2": 690,
+   "area_ft2": 7427.025
+  },
+  "vegetables": {
+   "count": 1,
+   "area_m2": 520,
+   "area_ft2": 5597.261
+  },
+  "water": {
+   "count": 1,
+   "area_m2": 532,
+   "area_ft2": 5726.434
+  },
+  "yard": {
+   "count": 1,
+   "area_m2": 80,
+   "area_ft2": 861.112
+  }
+ },
+ "checks_run": [
+  "schema (both files, structural)",
+  "parcel.square / parcel.area / parcel.feet",
+  "zone.unique",
+  "zone.interior (5..95 m)",
+  "zone.overlap (zone vs zone)",
+  "zone.path_overlap (zone vs gravel path)",
+  "crop_plot.size (22 x 24 m) and crop_plot.present",
+  "zone.feet (declared ft columns vs metres x 3.28084)",
+  "orchard.size / alley.inside / alley.shape / orchard.entrance / orchard.layers / orchard.species / orchard.needs_review / orchard.placeholder"
+ ],
+ "violations": [],
+ "injected_faults": [
+  {
+   "id": "overlap",
+   "what": "two zones overlapping",
+   "expected_check": "zone.overlap",
+   "caught": true,
+   "reverted_clean": true,
+   "violations": [
+    {
+     "check": "zone.overlap",
+     "detail": "plot_sunflower and plot_groundnut overlap by 216 m2"
+    }
+   ]
+  },
+  {
+   "id": "outside",
+   "what": "a zone outside the 5..95 m interior",
+   "expected_check": "zone.interior",
+   "caught": true,
+   "reverted_clean": true,
+   "violations": [
+    {
+     "check": "zone.interior",
+     "detail": "solar_dryer spans x 92..101 m, y 68..80 m, outside 5..95"
+    },
+    {
+     "check": "zone.path_overlap",
+     "detail": "solar_dryer overlaps path \"walk_E\" by 24 m2"
+    }
+   ]
+  },
+  {
+   "id": "parcel",
+   "what": "a parcel that is not a 100 m square",
+   "expected_check": "parcel.square",
+   "caught": true,
+   "reverted_clean": true,
+   "violations": [
+    {
+     "check": "parcel.square",
+     "detail": "side_m is 90, the brief says 100"
+    }
+   ]
+  },
+  {
+   "id": "alley",
+   "what": "an alley outside the orchard",
+   "expected_check": "alley.inside",
+   "caught": true,
+   "reverted_clean": true,
+   "violations": [
+    {
+     "check": "alley.inside",
+     "detail": "ns_2 spans x 80..85 ft, the orchard is 0..82.02"
+    }
+   ]
+  }
+ ]
+}

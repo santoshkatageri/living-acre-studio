@@ -36,6 +36,8 @@ interface ZoneOverride {
 
 interface OverridesFile {
   overrides: {
+    /** Which world the app builds: the acre (canon v1) or the hectare (v2). */
+    world: string;
     zones: Record<string, ZoneOverride>;
     zone_placeholders: Record<string, { size_ft: { width_ft: number; depth_ft: number }; inset_ft?: number }>;
     player: { radius_ft: number; speed_ft_per_s: number; spawn_ft: Vec2 };
@@ -134,6 +136,23 @@ interface OverridesFile {
 const canon = canonJson as unknown as CanonFile;
 const overrides = overridesJson as unknown as OverridesFile;
 const round3 = (n: number): number => Math.round(n * 1000) / 1000;
+
+/*  World switch. The acre world is canon v1 and the hectare world is the v2
+    layout in data/farm-layout-v2.json. Both must build; the switch says which
+    one the app stands up. */
+export type WorldId = "acre_v1" | "hectare_v2";
+
+export const WORLD_IDS: WorldId[] = ["acre_v1", "hectare_v2"];
+
+/** Read a world id, refusing anything the app cannot build. */
+export function parseWorldId(value: string): WorldId {
+  const found = WORLD_IDS.find((id) => id === value);
+  if (!found) throw new Error(`world "${value}" is not one of ${WORLD_IDS.join(", ")}`);
+  return found;
+}
+
+/** The world the app builds, from sim_overrides.json. */
+export const WORLD_ID: WorldId = parseWorldId(overrides.overrides.world);
 
 /** Box for a canon zone: canon position, canon size (size_ft wins). */
 function canonBox(zone: CanonZone): Box {

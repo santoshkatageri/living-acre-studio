@@ -1,6 +1,7 @@
 {
   "_note": "Everything the canon does not fix. Canon values are never repeated here. Look values marked PLACEHOLDER are eyeballed from the hero image and are not canon.",
   "overrides": {
+    "world": "hectare_v2",
     "zones": {
       "farmhouse": {
         "walkable": false,
