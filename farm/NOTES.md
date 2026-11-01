@@ -164,8 +164,9 @@ image, not canon.
 `src/sim/belt.ts` walks every candidate in seeded order, jitters it, clips it
 into its own band, then drops it if it is within the gate aperture, a path
 corridor (the garden walk included), a zone footprint, the pond water, or the
-pond ring. **184 candidates → 147 trees** (`round_canopy` 111, `tall_slender`
-36); drops: overlaps a neighbour 19, path corridor 14, gate gap 4. Heights
+pond ring. **184 candidates → 145 trees** (`round_canopy` 110, `tall_slender`
+35, west 39 / north 44 / east 24 / south 38); drops: overlaps a neighbour 19,
+path corridor 16, gate gap 4. Heights
 18.0–30.3 ft, under the 34 ft cap, so the farmer and the labels stay visible at
 default zoom. **The trees are decoration: no collision, no zone moves, no
 gameplay.** `src/render/belt.ts` draws them as two `InstancedMesh`es, one per
@@ -193,23 +194,28 @@ to its own wall, and a spur is scored by bends then length:
 | orchard | 40.60 | `walk_109` (139.37, 130.46) |
 | pond_ring | 14.58 | `walk_join_pond_ring` (153.95, 130.46) |
 
-6/6 kept, none dropped. The walk crosses the trunk network in 6 places; each is
-split into a real `walk_junction_N` node, so a crossing is walkable, not just
-drawn. Three short lenses survive — two ways between the same pair of junctions
-where the loop and a trunk cut the same corner (the gate leaf, the orchard
-leaf, and the ring leaf) — they are left in, documented, and the network test
-allows them while still refusing any doubled trunk leg.
+A spur may cross the trunk **once** — that is a junction — and never twice, which
+is what used to leave a lens. Where a spur leaves the same node its own trunk
+does (the orchards, the gate), a crossing there is left unsplit on purpose: the
+two already meet at the door, so a junction would only add a second way between
+the same two nodes. That is why **no two edges now share a pair of nodes at
+all** (the network test asserts it outright) and why there are 2 `walk_junction`
+nodes rather than the 6 an earlier revision produced.
+
+6/6 kept, none dropped. Where the loop crosses a trunk in open ground the
+crossing is split into a real `walk_junction_N` node, so it is walkable, not
+just drawn: 2 such junctions.
 
 Movement is unchanged: the loop is painted onto the same 1 ft walkable grid as
 every other path, so `P` shows it walkable and A* may use it; the boundary still
 blocks and the belt still has no collision. Routes from the gate to the six
 joined sections, with the loop on and off: gate 0.00/0.00, compost 29.07/29.07,
-goshala 183.19/183.19, farmhouse 173.29/173.29, orchard 183.72/180.60,
-pond_ring 216.31/220.60. The orchard is 3.12 ft longer with the loop on: adding
-walkable cells cannot lengthen the true optimal route, so this is A* choosing
-between equal-cost cell paths and measuring slightly differently — it is inside
-the 2 % tie-break slack the route test allows, and the ratio is still 1.16
-against the 1.6 limit. No benches or lamps were added: the brief called them
+goshala 183.57/183.19, farmhouse 173.78/173.64, orchard 178.26/180.60,
+pond_ring 219.89/220.60. The orchard (2.34 ft) and the pond ring (0.71 ft) are
+shorter with the loop; the goshala (+0.38 ft) and farmhouse (+0.14 ft) are a
+hair longer, which is A* choosing between equal-cost cell paths now that there
+are more walkable cells — inside the 2 % tie-break slack the route test allows,
+and every ratio is still under the 1.6 limit. No benches or lamps were added: the brief called them
 optional and they would need new geometry and a new data block.
 
 ## Render budget
@@ -222,8 +228,8 @@ after the polish pass:
 | polish pass, before (commit 529ce43) | 60 | 8,317 |
 | polish pass, after (commit 1fe83c6), visible | 50 | 9,387 |
 | polish pass, after, + shadow pass (42 casters) | 92 | 18,305 |
-| **belt + walk (this step)**, visible | **55** | **27,971** |
-| **belt + walk (this step)**, + shadow pass (47 casters) | **102** | **55,926** |
+| **belt + walk (this step)**, visible | **55** | **27,691** |
+| **belt + walk (this step)**, + shadow pass (47 casters) | **102** | **55,366** |
 
 `scripts/report-render.ts` rebuilds the same groups `createView` builds, walks
 the scene and counts one call per drawable (an `InstancedMesh` is one call
@@ -232,9 +238,9 @@ commit `1fe83c6` it reproduces that commit's 50 calls / 9,387 visible triangles
 exactly; its shadow-pass figure for the same commit is 18,758 triangles, 453
 more than the number recorded during the polish pass, because the two counts
 tallied the shadow pass slightly differently. Both sides of the new table come
-from the one script. The belt adds **4 draws / 15,288 triangles** (two trunk
+from the one script. The belt adds **4 draws / 15,080 triangles** (two trunk
 `InstancedMesh`es and two canopy ones, one pair per species); the walk adds
-**1 draw / 4,066 triangles** to the paths group (the loop ribbon, its lighter
+**1 draw / 4,014 triangles** to the paths group (the loop ribbon, its lighter
 edge strip and the six spurs). No thin fence was built: the brief allowed one
 "only if it fits" on the north-east, and the 12 ft north / 5 ft east bands are
 already full of trees, so it was left out rather than crowded in. Budget 300
@@ -273,6 +279,6 @@ Pinned exactly: `three@0.186.1`, `vite@8.3.4`, `vitest@5.0.5`,
 - **M3**: paths-only movement, A*, pond ring, P overlay.
 - **M4**: network completion — seven sections connected, beds–orchard direct,
   beds–farmhouse, beds perimeter loop, ring keep-out, "Path" HUD label.
-- **Buffer belt + perimeter walk**: 147 decorative trees in four bands, a closed
+- **Buffer belt + perimeter walk**: 145 decorative trees in four bands, a closed
   760.73 ft garden walk with six spurs joined to the network at real junctions.
   **157 tests across 12 files**, typecheck and build clean.

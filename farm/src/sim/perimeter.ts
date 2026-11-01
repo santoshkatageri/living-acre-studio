@@ -344,7 +344,7 @@ function crossesSolid(world: World, a: Vec2, b: Vec2): string | null {
  * drawn. A segmented test misses a hit that lands on a sample vertex, and that
  * is exactly the case that leaves a lens between two junctions.
  */
-function crossingsOf(points: Vec2[], edges: PathEdge[]): number {
+function crossingsOf(points: Vec2[], edges: PathEdge[], ignoreNear?: Vec2): number {
   let count = 0;
   for (let i = 1; i < points.length; i += 1) {
     const a = points[i - 1] as Vec2;
@@ -365,7 +365,10 @@ function crossingsOf(points: Vec2[], edges: PathEdge[]): number {
           nearest = Math.min(nearest, Math.hypot(point.x - (p0.x + dx * t), point.y - (p0.y + dy * t)));
         }
       }
-      const near = nearest < 0.4;
+      // Leaving a door, the spur starts on ground the door's own trunk already
+      // occupies; that is not a crossing, so the first half-foot is ignored.
+      const atDoor = ignoreNear !== undefined && Math.hypot(point.x - ignoreNear.x, point.y - ignoreNear.y) < 0.6;
+      const near = nearest < 0.4 && !atDoor;
       if (near && !inside) count += 1;
       inside = near;
     }
@@ -458,20 +461,22 @@ export function buildPerimeter(
       continue;
     }
 
+    const clear = world.perimeter.widthFt / 2 + world.perimeter.clearanceFt;
     const owner = world.zones.find(
       (zone) =>
         !zone.circle &&
+        // A gate post is smaller than the corridor it opens onto: it has no
+        // wall face to leave square to, so it takes the plain L instead.
+        Math.min(zone.box.widthFt, zone.box.depthFt) > clear &&
         (Math.abs(entrance.x - zone.box.x) < 0.01 ||
           Math.abs(entrance.x - (zone.box.x + zone.box.widthFt)) < 0.01 ||
           Math.abs(entrance.y - zone.box.y) < 0.01 ||
           Math.abs(entrance.y - (zone.box.y + zone.box.depthFt)) < 0.01),
     );
-    const clear = world.perimeter.widthFt / 2 + world.perimeter.clearanceFt;
 
-    // Candidate attach points: the projection onto the loop, then the loop's
-    // own nodes. Both are scored the same way — fewest bends, then shortest —
-    // so a door that can leave square to its wall does, and a door in a corner
-    // falls back to the nearest node.
+    // Candidate attach points: the projection onto the loop, plus the loop's own
+    // nodes. They are tried nearest-first, so a door that can leave square to
+    // its wall does, and a door in a corner falls back to a node.
     const candidates: Vec2[] = [];
     const projection = nearestOnLoop({ x: entrance.x, y: entrance.y });
     if (projection) candidates.push(projection.at);
@@ -480,62 +485,92 @@ export function buildPerimeter(
       if (node) candidates.push({ x: node.x, y: node.y });
     }
 
-    let chosen: { at: Vec2; points: Vec2[]; bends: number; lengthFt: number } | null = null;
-    for (const target of candidates) {
+    let chosen: { at: Vec2; points: Vec2[]; bends: number; lengthFt: number; crossings: number } | null = null;
+    // Nearest first: an L's length is exactly its Manhattan distance, so the
+    // first candidate that passes every check IS the shortest clean spur and
+    // the rest need not be tested.
+    const ordered = candidates
+      .map((target) => ({
+        target,
+        reach: Math.abs(target.x - entrance.x) + Math.abs(target.y - entrance.y),
+      }))
+      .sort((a, b) => a.reach - b.reach);
+    for (const { target } of ordered) {
       const dx = Math.abs(target.x - entrance.x);
       const dy = Math.abs(target.y - entrance.y);
-      const points: Vec2[] = [{ x: entrance.x, y: entrance.y }];
-      if (dx > 0.5 && dy > 0.5) {
+      const start = { x: entrance.x, y: entrance.y };
+      const end = { x: target.x, y: target.y };
+      const variants: Vec2[][] = [];
+      if (dx <= 0.5 || dy <= 0.5) {
+        variants.push([start, end]);
+      } else {
+        // Both L orders: which one crosses the trunk is a matter of geometry,
+        // not of which axis happens to be longer.
+        const alongX = [start, { x: target.x, y: entrance.y }, end];
+        const alongY = [start, { x: entrance.x, y: target.y }, end];
         if (owner) {
-          // Leave square to the wall, far enough to clear its own corridor.
-          const faceY = entrance.y <= owner.box.y ? owner.box.y : entrance.y >= owner.box.y + owner.box.depthFt ? owner.box.y + owner.box.depthFt : null;
-          const faceX = entrance.x <= owner.box.x ? owner.box.x : entrance.x >= owner.box.x + owner.box.widthFt ? owner.box.x + owner.box.widthFt : null;
+          // A door leaves square to its own wall, far enough to clear the
+          // corridor, before turning towards the loop.
+          const faceY =
+            entrance.y <= owner.box.y
+              ? owner.box.y
+              : entrance.y >= owner.box.y + owner.box.depthFt
+                ? owner.box.y + owner.box.depthFt
+                : null;
+          const faceX =
+            entrance.x <= owner.box.x
+              ? owner.box.x
+              : entrance.x >= owner.box.x + owner.box.widthFt
+                ? owner.box.x + owner.box.widthFt
+                : null;
           if (faceY !== null && Math.abs(entrance.y - faceY) < 0.01) {
-            points.push({ x: entrance.x, y: faceY + (target.y >= faceY ? clear : -clear) });
-            points.push({ x: target.x, y: (points[points.length - 1] as Vec2).y });
+            const out = { x: entrance.x, y: faceY + (target.y >= faceY ? clear : -clear) };
+            variants.push([start, out, { x: target.x, y: out.y }, end]);
           } else if (faceX !== null && Math.abs(entrance.x - faceX) < 0.01) {
-            points.push({ x: faceX + (target.x >= faceX ? clear : -clear), y: entrance.y });
-            points.push({ x: (points[points.length - 1] as Vec2).x, y: target.y });
-          } else {
-            points.push(dx >= dy ? { x: target.x, y: entrance.y } : { x: entrance.x, y: target.y });
-          }
-        } else {
-          points.push(dx >= dy ? { x: target.x, y: entrance.y } : { x: entrance.x, y: target.y });
-        }
-      }
-      points.push({ x: target.x, y: target.y });
-
-      let blocked = false;
-      for (let i = 1; i < points.length && !blocked; i += 1) {
-        if (crossesSolid(world, points[i - 1] as Vec2, points[i] as Vec2)) blocked = true;
-      }
-      if (blocked) continue;
-      // The loop keeps clear of the pond ring; a spur may end at the ring's own
-      // door (that section opens onto the ring) but must not cut across it.
-      if (pond?.circle && ring !== null && section !== "pond_ring") {
-        const keepOut = ring + margin;
-        let inside = false;
-        for (let i = 1; i < points.length && !inside; i += 1) {
-          const from = points[i - 1] as Vec2;
-          const to = points[i] as Vec2;
-          const steps = Math.max(1, Math.ceil(distance(from, to) / 0.5));
-          for (let k = 0; k <= steps && !inside; k += 1) {
-            const p = { x: from.x + ((to.x - from.x) * k) / steps, y: from.y + ((to.y - from.y) * k) / steps };
-            if (Math.hypot(p.x - pond.circle.cx, p.y - pond.circle.cy) < keepOut) inside = true;
+            const out = { x: faceX + (target.x >= faceX ? clear : -clear), y: entrance.y };
+            variants.push([start, out, { x: out.x, y: target.y }, end]);
           }
         }
-        if (inside) continue;
+        variants.push(alongX, alongY);
       }
-      const walkOnly = edges.filter((edge) => edge.kind !== "walk");
-      if (crossingsOf(points.slice(0, -1), walkOnly) > 0) continue;
 
-      const lengthFt = points.reduce((sum, point, index) => (index === 0 ? 0 : sum + distance(points[index - 1] as Vec2, point)), 0);
-      const bends = points.length - 2;
-      const better =
-        !chosen ||
-        bends < chosen.bends ||
-        (bends === chosen.bends && lengthFt < chosen.lengthFt);
-      if (better) chosen = { at: target, points, bends, lengthFt };
+      for (const points of variants) {
+        let blocked = false;
+        for (let i = 1; i < points.length && !blocked; i += 1) {
+          if (crossesSolid(world, points[i - 1] as Vec2, points[i] as Vec2)) blocked = true;
+        }
+        if (blocked) continue;
+        // The loop keeps clear of the pond ring; a spur may end at the ring's
+        // own door (that section opens onto the ring) but must not cut across it.
+        if (pond?.circle && ring !== null && section !== "pond_ring") {
+          const keepOut = ring + margin;
+          let inside = false;
+          for (let i = 1; i < points.length && !inside; i += 1) {
+            const from = points[i - 1] as Vec2;
+            const to = points[i] as Vec2;
+            const steps = Math.max(1, Math.ceil(distance(from, to) / 0.5));
+            for (let k = 0; k <= steps && !inside; k += 1) {
+              const p = { x: from.x + ((to.x - from.x) * k) / steps, y: from.y + ((to.y - from.y) * k) / steps };
+              if (Math.hypot(p.x - pond.circle.cx, p.y - pond.circle.cy) < keepOut) inside = true;
+            }
+          }
+          if (inside) continue;
+        }
+        // One crossing is a junction. Two crossings against the same trunk make
+        // a second, pointless way between the junctions they create (a lens),
+        // so a spur is held to a single crossing.
+        const crossings = crossingsOf(points.slice(0, -1), existing.edges, start);
+        if (crossings > 1) continue;
+
+        const lengthFt = points.reduce(
+          (sum, point, index) => (index === 0 ? 0 : sum + distance(points[index - 1] as Vec2, point)),
+          0,
+        );
+        const bends = points.length - 2;
+        if (!chosen) chosen = { at: target, points, bends, lengthFt, crossings };
+        break;
+      }
+      if (chosen && chosen.at === target) break;
     }
 
     if (!chosen) {
@@ -641,6 +676,15 @@ export function joinWalkCrossings(nodes: PathNode[], edges: PathEdge[]): PathNod
       for (const other of edges) {
         // The pond ring stays a clean closed polygon of uniform arcs.
         if (other.kind === "walk" || other.kind === "ring" || other === walk) continue;
+        // If the two legs already meet at a node, a junction here would make a
+        // second way between that node and the new junction for no gain: the
+        // farmer is already joined to both at the shared end.
+        const shared =
+          walk.from === other.from ||
+          walk.from === other.to ||
+          walk.to === other.from ||
+          walk.to === other.to;
+        if (shared) continue;
         for (let i = 1; i < walk.points.length && !found; i += 1) {
           for (let j = 1; j < other.points.length && !found; j += 1) {
             const hit = segmentHit(

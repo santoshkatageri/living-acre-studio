@@ -85,6 +85,16 @@ function crossPoint(a: Vec2, b: Vec2, c: Vec2, d: Vec2): Vec2 | null {
   return { x: a.x + t * r.x, y: a.y + t * r.y };
 }
 
+/** Do two edges meet at a node? */
+function sharesNode(a: string, b: string): boolean {
+  const ends = (id: string): string[] => {
+    const edge = NETWORK.edges.find((candidate) => candidate.id === id) as PathEdge;
+    return [edge.from, edge.to];
+  };
+  const first = ends(a);
+  return ends(b).some((id) => first.includes(id));
+}
+
 /** The edges along one shortest path between two nodes. */
 function pathEdges(from: string, to: string): PathEdge[] {
   const cameFrom = new Map<string, PathEdge>();
@@ -218,22 +228,10 @@ describe("the required links are single edges", () => {
     });
   }
 
-  test("no two trunk legs share the same pair of nodes", () => {
-    // The garden walk may close a small lens around a trunk — two ways between
-    // two junctions it created — but no two trunk legs may be doubled.
-    const byPair = new Map<string, PathEdge[]>();
-    for (const edge of NETWORK.edges) {
-      const key = [edge.from, edge.to].sort().join("|");
-      byPair.set(key, [...(byPair.get(key) ?? []), edge]);
-    }
-    const doubled = [...byPair.entries()].filter(([, list]) => list.length > 1);
-    for (const [key, list] of doubled) {
-      expect(list.length, key).toBe(2);
-      expect(
-        list.some((edge) => edge.kind === "walk"),
-        `${key} is two trunk legs`,
-      ).toBe(true);
-    }
+  test("no two edges share the same pair of nodes", () => {
+    // One way between any two adjacent nodes: no doubled legs, no lens.
+    const pairs = NETWORK.edges.map((edge) => [edge.from, edge.to].sort().join("|"));
+    expect(pairs).toHaveLength(new Set(pairs).size);
   });
 
   test("the graph is one component and keeps its three original cycles", () => {
@@ -347,6 +345,10 @@ describe("nodes and corridors keep out of the water", () => {
         const s = segments[i] as { edge: string; a: Vec2; b: Vec2 };
         const t = segments[j] as { edge: string; a: Vec2; b: Vec2 };
         if (s.edge === t.edge) continue;
+        // Two legs that already meet at a node are allowed to cross again: the
+        // walk and its own trunk meet at the door, and a junction at the second
+        // crossing would be a second way between the same two nodes.
+        if (sharesNode(s.edge, t.edge)) continue;
         const hit = crossPoint(s.a, s.b, t.a, t.b);
         if (!hit) continue;
         // A hit within half a foot of a leg's end is the junction itself, not a
